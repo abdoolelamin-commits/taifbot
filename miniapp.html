@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>طلب مشوار - taifbot</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: var(--tg-theme-bg-color, #ffffff);
+      --text: var(--tg-theme-text-color, #111111);
+      --hint: var(--tg-theme-hint-color, #6b7280);
+      --button: var(--tg-theme-button-color, #2563eb);
+      --button-text: var(--tg-theme-button-text-color, #ffffff);
+      --secondary: #f3f4f6;
+      --border: #e5e7eb;
+      --danger: #b91c1c;
+      --success: #166534;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Tahoma, Arial, sans-serif;
+    }
+    .card {
+      max-width: 620px;
+      margin: 0 auto;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.08);
+    }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    .sub { color: var(--hint); margin-bottom: 18px; line-height: 1.7; }
+    label { display: block; font-weight: 700; margin: 14px 0 8px; }
+    input, textarea, select, button {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      font-size: 16px;
+      background: #fff;
+    }
+    textarea { min-height: 90px; resize: vertical; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .muted { color: var(--hint); font-size: 14px; margin-top: 8px; line-height: 1.7; }
+    .loc-box {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--secondary);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    .status { margin-top: 12px; font-size: 14px; line-height: 1.7; }
+    .status.ok { color: var(--success); }
+    .status.err { color: var(--danger); }
+    .btn-inline {
+      margin-top: 10px;
+      background: var(--button);
+      color: var(--button-text);
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🚕 طلب مشوار</h1>
+    <div class="sub">
+      جرّب النسخة الجديدة داخل تيليجرام. املأ البيانات ثم اضغط زر الإرسال في الأسفل.
+    </div>
+
+    <label for="pickup_text">نقطة الانطلاق</label>
+    <input id="pickup_text" placeholder="سيُملأ تلقائيًا بعد تحديد الموقع أو اكتبه يدويًا" />
+
+    <button id="locBtn" class="btn-inline" type="button">📍 تحديد موقعي الحالي</button>
+    <div class="loc-box" id="locInfo">لم يتم تحديد الموقع بعد.</div>
+
+    <label for="destination">الوجهة</label>
+    <input id="destination" placeholder="مثال: مستشفى الملك فيصل" />
+
+    <div class="row">
+      <div>
+        <label for="passengers">عدد الركاب</label>
+        <select id="passengers">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+      </div>
+      <div>
+        <label for="city">المدينة</label>
+        <input id="city" value="الطائف" />
+      </div>
+    </div>
+
+    <label for="notes">ملاحظات</label>
+    <textarea id="notes" placeholder="مثال: عندي شنط / أمام البوابة الرئيسية"></textarea>
+
+    <div class="muted">
+      ملاحظة: هذه النسخة التجريبية تستخدم موقع الجهاز الحالي من المتصفح داخل تيليجرام.
+    </div>
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    const pickupInput = document.getElementById('pickup_text');
+    const destinationInput = document.getElementById('destination');
+    const passengersInput = document.getElementById('passengers');
+    const notesInput = document.getElementById('notes');
+    const cityInput = document.getElementById('city');
+    const locInfo = document.getElementById('locInfo');
+    const locBtn = document.getElementById('locBtn');
+    const statusEl = document.getElementById('status');
+
+    let pickupLat = null;
+    let pickupLon = null;
+
+    function setStatus(text, kind='') {
+      statusEl.className = `status ${kind}`.trim();
+      statusEl.textContent = text;
+    }
+
+    function updateMainButton() {
+      tg.MainButton.setText('إرسال الطلب');
+      tg.MainButton.show();
+      tg.MainButton.enable();
+    }
+
+    async function reverseGeocode(lat, lon) {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=ar&zoom=18&addressdetails=1&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!res.ok) throw new Error('تعذر جلب العنوان');
+      const data = await res.json();
+      const addr = data.address || {};
+      const suburb = addr.suburb || addr.neighbourhood || addr.quarter || '';
+      const road = addr.road || '';
+      const city = addr.city || addr.town || addr.village || cityInput.value || 'الطائف';
+      const parts = [suburb, road, city].filter(Boolean);
+      return parts.length ? parts.join('، ') : (data.display_name || 'موقع مرسل');
+    }
+
+    locBtn.addEventListener('click', async () => {
+      if (!navigator.geolocation) {
+        setStatus('المتصفح لا يدعم تحديد الموقع.', 'err');
+        return;
+      }
+      setStatus('جاري تحديد الموقع...', '');
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        pickupLat = Number(pos.coords.latitude.toFixed(6));
+        pickupLon = Number(pos.coords.longitude.toFixed(6));
+        locInfo.textContent = `lat: ${pickupLat} | lon: ${pickupLon}`;
+        try {
+          const nice = await reverseGeocode(pickupLat, pickupLon);
+          pickupInput.value = `📍 ${nice}`;
+          locInfo.textContent = `تم تحديد الموقع: ${nice}`;
+          setStatus('تم تحديد الموقع بنجاح.', 'ok');
+        } catch (e) {
+          if (!pickupInput.value.trim()) pickupInput.value = '📍 موقع مرسل';
+          setStatus('تم تحديد الإحداثيات، لكن تعذر جلب العنوان النصي.', 'ok');
+        }
+      }, (err) => {
+        const message = err && err.message ? err.message : 'تعذر الوصول للموقع';
+        setStatus(`فشل تحديد الموقع: ${message}`, 'err');
+      }, {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 0
+      });
+    });
+
+    tg.MainButton.onClick(() => {
+      const destination = destinationInput.value.trim();
+      const pickupText = pickupInput.value.trim();
+      const notes = notesInput.value.trim();
+      const passengers = parseInt(passengersInput.value || '1', 10);
+
+      if (!pickupLat || !pickupLon) {
+        setStatus('حدد موقع الانطلاق أولاً.', 'err');
+        return;
+      }
+      if (!destination) {
+        setStatus('اكتب الوجهة أولاً.', 'err');
+        return;
+      }
+
+      const payload = {
+        action: 'create_trip',
+        pickup_text: pickupText || '📍 موقع مرسل',
+        pickup_lat: pickupLat,
+        pickup_lon: pickupLon,
+        destination,
+        passengers,
+        notes,
+        city: cityInput.value.trim()
+      };
+
+      try {
+        tg.sendData(JSON.stringify(payload));
+        tg.close();
+      } catch (e) {
+        setStatus('تعذر إرسال الطلب إلى البوت.', 'err');
+      }
+    });
+
+    updateMainButton();
+  </script>
+</body>
+</html>
