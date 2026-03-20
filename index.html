@@ -1,183 +1,291 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>🚕 طلب مشوار</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🚕 طلب مشوار</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg1: #0f172a;
+      --bg2: #1e293b;
+      --card: rgba(255,255,255,0.10);
+      --text: #ffffff;
+      --hint: #cbd5e1;
+      --primary: #22c55e;
+      --primary-dark: #16a34a;
+      --danger: #ef4444;
+      --border: rgba(255,255,255,0.12);
+    }
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+    * { box-sizing: border-box; }
 
-<style>
-:root {
-  --bg: linear-gradient(135deg, #0f172a, #1e293b);
-  --card: rgba(255,255,255,0.08);
-  --text: #ffffff;
-  --hint: #cbd5e1;
-  --primary: #22c55e;
-  --danger: #ef4444;
-}
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Tahoma, Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      color: var(--text);
+      padding: 18px;
+    }
 
-body {
-  margin: 0;
-  font-family: Tahoma;
-  background: var(--bg);
-  color: var(--text);
-}
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+    }
 
-.container {
-  max-width: 500px;
-  margin: auto;
-  padding: 20px;
-}
+    .hero {
+      text-align: center;
+      margin: 10px 0 18px;
+    }
 
-.card {
-  background: var(--card);
-  backdrop-filter: blur(12px);
-  border-radius: 18px;
-  padding: 20px;
-}
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
 
-h1 {
-  margin: 0 0 10px;
-}
+    .hero p {
+      margin: 0;
+      color: var(--hint);
+      line-height: 1.8;
+      font-size: 15px;
+    }
 
-.sub {
-  color: var(--hint);
-  margin-bottom: 15px;
-}
+    .card {
+      background: var(--card);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.22);
+    }
 
-label {
-  margin-top: 12px;
-  display: block;
-}
+    label {
+      display: block;
+      margin: 14px 0 8px;
+      font-weight: 700;
+    }
 
-input, textarea, select {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  margin-top: 5px;
-}
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px 14px;
+      font-size: 16px;
+      background: rgba(255,255,255,0.96);
+      color: #111827;
+      outline: none;
+    }
 
-button {
-  margin-top: 10px;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: var(--primary);
-  color: white;
-  font-weight: bold;
-}
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
 
-.status {
-  margin-top: 10px;
-}
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
 
-.ok { color: #22c55e; }
-.err { color: #ef4444; }
+    .btn {
+      width: 100%;
+      margin-top: 12px;
+      border: none;
+      border-radius: 14px;
+      padding: 13px 14px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+    }
 
-.loc-box {
-  margin-top: 10px;
-  font-size: 14px;
-}
-</style>
+    .loc-box {
+      margin-top: 10px;
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.10);
+      color: var(--hint);
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    .status {
+      margin-top: 12px;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .ok { color: #86efac; }
+    .err { color: #fca5a5; }
+
+    .footer-note {
+      margin-top: 14px;
+      color: var(--hint);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+  </style>
 </head>
-
 <body>
+  <div class="container">
+    <div class="hero">
+      <h1>🚕 طلب مشوار</h1>
+      <p>أدخل بيانات الرحلة وسنرسل طلبك مباشرة إلى السائقين المتاحين.</p>
+    </div>
 
-<div class="container">
-<div class="card">
+    <div class="card">
+      <label for="pickup_text">📍 نقطة الانطلاق</label>
+      <input id="pickup_text" placeholder="حدد موقعك أو اكتب المكان يدويًا" />
 
-<h1>🚕 طلب مشوار</h1>
-<div class="sub">اطلب سائق بسهولة خلال ثواني</div>
+      <button id="locBtn" class="btn" type="button">📍 تحديد موقعي الحالي</button>
+      <div id="locInfo" class="loc-box">لم يتم تحديد الموقع بعد.</div>
 
-<label>📍 نقطة الانطلاق</label>
-<input id="pickup_text" placeholder="حدد موقعك أو اكتبه" />
+      <label for="destination">🎯 الوجهة</label>
+      <input id="destination" placeholder="إلى أين تريد الذهاب؟" />
 
-<button id="locBtn">📍 تحديد موقعي</button>
-<div id="locInfo" class="loc-box">لم يتم تحديد الموقع</div>
+      <div class="row">
+        <div>
+          <label for="passengers">👥 عدد الركاب</label>
+          <select id="passengers">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </div>
 
-<label>🎯 الوجهة</label>
-<input id="destination" placeholder="إلى أين؟" />
+        <div>
+          <label for="city">🏙️ المدينة</label>
+          <input id="city" value="الطائف" />
+        </div>
+      </div>
 
-<label>👥 عدد الركاب</label>
-<select id="passengers">
-<option>1</option>
-<option>2</option>
-<option>3</option>
-<option>4</option>
-</select>
+      <label for="notes">📝 ملاحظات</label>
+      <textarea id="notes" placeholder="مثال: عندي شنط / أمام البوابة"></textarea>
 
-<label>📝 ملاحظات</label>
-<textarea id="notes"></textarea>
+      <div id="status" class="status"></div>
 
-<div id="status" class="status"></div>
+      <div class="footer-note">
+        سيتم استخدام موقعك الحالي لالتقاط نقطة الانطلاق بدقة.
+      </div>
+    </div>
+  </div>
 
-</div>
-</div>
+  <script>
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 
-<script>
-const tg = window.Telegram.WebApp;
-tg.expand();
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      tg.MainButton.setText("🚀 إرسال الطلب");
+      tg.MainButton.show();
+      tg.MainButton.enable();
+    }
 
-let lat=null, lon=null;
-let sending=false;
+    let lat = null;
+    let lon = null;
+    let sending = false;
 
-const statusEl = document.getElementById("status");
+    const pickupInput = document.getElementById("pickup_text");
+    const destinationInput = document.getElementById("destination");
+    const passengersInput = document.getElementById("passengers");
+    const notesInput = document.getElementById("notes");
+    const cityInput = document.getElementById("city");
+    const locBtn = document.getElementById("locBtn");
+    const locInfo = document.getElementById("locInfo");
+    const statusEl = document.getElementById("status");
 
-function setStatus(t, type=""){
-  statusEl.className = "status " + type;
-  statusEl.textContent = t;
-}
+    function setStatus(text, type = "") {
+      statusEl.className = "status " + type;
+      statusEl.textContent = text;
+    }
 
-document.getElementById("locBtn").onclick = () => {
-  navigator.geolocation.getCurrentPosition(pos=>{
-    lat = pos.coords.latitude;
-    lon = pos.coords.longitude;
-    document.getElementById("locInfo").textContent = "📍 تم تحديد الموقع";
-    setStatus("تم تحديد الموقع", "ok");
-  },()=>{
-    setStatus("فشل تحديد الموقع", "err");
-  });
-};
+    locBtn.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        setStatus("هذا الجهاز لا يدعم تحديد الموقع.", "err");
+        return;
+      }
 
-tg.MainButton.setText("🚀 إرسال الطلب");
-tg.MainButton.show();
+      setStatus("جاري تحديد الموقع...", "");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          lat = Number(pos.coords.latitude.toFixed(6));
+          lon = Number(pos.coords.longitude.toFixed(6));
+          pickupInput.value = "📍 موقع مرسل";
+          locInfo.textContent = "تم تحديد موقعك بنجاح.";
+          setStatus("تم تحديد الموقع بنجاح.", "ok");
+        },
+        (err) => {
+          const message = err && err.message ? err.message : "تعذر تحديد الموقع";
+          setStatus("فشل تحديد الموقع: " + message, "err");
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 0
+        }
+      );
+    });
 
-tg.MainButton.onClick(()=>{
-  if(sending) return;
-  sending = true;
+    function submitTrip() {
+      if (sending) return;
+      sending = true;
 
-  const dest = document.getElementById("destination").value;
+      const destination = destinationInput.value.trim();
+      const pickupText = pickupInput.value.trim();
+      const notes = notesInput.value.trim();
+      const passengers = parseInt(passengersInput.value || "1", 10);
+      const city = cityInput.value.trim() || "الطائف";
 
-  if(!lat){
-    setStatus("حدد موقعك أولاً","err");
-    sending=false;
-    return;
-  }
+      if (!lat || !lon) {
+        setStatus("حدد موقع الانطلاق أولًا.", "err");
+        sending = false;
+        return;
+      }
 
-  if(!dest){
-    setStatus("اكتب الوجهة","err");
-    sending=false;
-    return;
-  }
+      if (!destination) {
+        setStatus("اكتب الوجهة أولًا.", "err");
+        sending = false;
+        return;
+      }
 
-  tg.MainButton.setText("جاري الإرسال...");
-  tg.MainButton.disable();
+      const payload = {
+        action: "create_trip",
+        pickup_text: pickupText || "📍 موقع مرسل",
+        pickup_lat: lat,
+        pickup_lon: lon,
+        destination,
+        passengers,
+        notes,
+        city
+      };
 
-  const data = {
-    action:"create_trip",
-    pickup_lat:lat,
-    pickup_lon:lon,
-    destination:dest,
-    passengers:document.getElementById("passengers").value,
-    notes:document.getElementById("notes").value
-  };
+      try {
+        if (tg) {
+          tg.MainButton.setText("جاري الإرسال...");
+          tg.MainButton.disable();
+          tg.sendData(JSON.stringify(payload));
+          tg.close();
+        } else {
+          setStatus("الصفحة تعمل خارج تيليجرام، لذلك لن يتم إرسال الطلب.", "err");
+          console.log(payload);
+        }
+      } catch (e) {
+        setStatus("تعذر إرسال الطلب إلى البوت.", "err");
+        sending = false;
+        if (tg) {
+          tg.MainButton.setText("🚀 إرسال الطلب");
+          tg.MainButton.enable();
+        }
+      }
+    }
 
-  tg.sendData(JSON.stringify(data));
-  tg.close();
-});
-</script>
-
+    if (tg) {
+      tg.MainButton.onClick(submitTrip);
+    }
+  </script>
 </body>
 </html>
