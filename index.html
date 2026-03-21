@@ -102,6 +102,11 @@
       cursor: pointer;
     }
 
+    .btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
     .loc-box {
       margin-top: 10px;
       border-radius: 14px;
@@ -203,6 +208,51 @@
       statusEl.textContent = text;
     }
 
+    async function reverseGeocode(lat, lon) {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=ar&zoom=18&addressdetails=1&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+
+      const res = await fetch(url, {
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error("تعذر جلب وصف الموقع");
+      }
+
+      const data = await res.json();
+      const addr = data.address || {};
+
+      const suburb =
+        addr.suburb ||
+        addr.neighbourhood ||
+        addr.quarter ||
+        addr.city_district ||
+        "";
+
+      const road =
+        addr.road ||
+        addr.pedestrian ||
+        addr.residential ||
+        "";
+
+      const city =
+        addr.city ||
+        addr.town ||
+        addr.village ||
+        cityInput.value.trim() ||
+        "الطائف";
+
+      const parts = [suburb, road, city].filter(Boolean);
+
+      if (parts.length) {
+        return parts.join("، ");
+      }
+
+      return data.display_name || "موقع مرسل";
+    }
+
     locBtn.addEventListener("click", () => {
       if (!navigator.geolocation) {
         setStatus("هذا الجهاز لا يدعم تحديد الموقع.", "err");
@@ -210,17 +260,36 @@
       }
 
       setStatus("جاري تحديد الموقع...", "");
+      locBtn.disabled = true;
+      locBtn.textContent = "⏳ جاري التحديد...";
+
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        async (pos) => {
           lat = Number(pos.coords.latitude.toFixed(6));
           lon = Number(pos.coords.longitude.toFixed(6));
-          pickupInput.value = "📍 موقع مرسل";
-          locInfo.textContent = "تم تحديد موقعك بنجاح.";
-          setStatus("تم تحديد الموقع بنجاح.", "ok");
+
+          locInfo.textContent = `تم الحصول على الإحداثيات، جاري جلب وصف الموقع...`;
+
+          try {
+            const niceAddress = await reverseGeocode(lat, lon);
+            pickupInput.value = `📍 ${niceAddress}`;
+            locInfo.textContent = `تم تحديد موقعك: ${niceAddress}`;
+            setStatus("تم تحديد الموقع بنجاح.", "ok");
+          } catch (e) {
+            const fallback = cityInput.value.trim() || "الطائف";
+            pickupInput.value = `📍 ${fallback}`;
+            locInfo.textContent = "تم تحديد الإحداثيات، لكن تعذر جلب وصف الموقع النصي.";
+            setStatus("تم تحديد الموقع، لكن تعذر جلب الوصف التفصيلي.", "ok");
+          } finally {
+            locBtn.disabled = false;
+            locBtn.textContent = "📍 تحديد موقعي الحالي";
+          }
         },
         (err) => {
           const message = err && err.message ? err.message : "تعذر تحديد الموقع";
           setStatus("فشل تحديد الموقع: " + message, "err");
+          locBtn.disabled = false;
+          locBtn.textContent = "📍 تحديد موقعي الحالي";
         },
         {
           enableHighAccuracy: true,
@@ -254,7 +323,7 @@
 
       const payload = {
         action: "create_trip",
-        pickup_text: pickupText || "📍 موقع مرسل",
+        pickup_text: pickupText || `📍 ${city}`,
         pickup_lat: lat,
         pickup_lon: lon,
         destination,
@@ -272,6 +341,7 @@
         } else {
           setStatus("الصفحة تعمل خارج تيليجرام، لذلك لن يتم إرسال الطلب.", "err");
           console.log(payload);
+          sending = false;
         }
       } catch (e) {
         setStatus("تعذر إرسال الطلب إلى البوت.", "err");
