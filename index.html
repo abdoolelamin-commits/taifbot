@@ -270,20 +270,27 @@
 
           locInfo.textContent = `تم الحصول على الإحداثيات، جاري جلب وصف الموقع...`;
 
-          try {
-            const niceAddress = await reverseGeocode(lat, lon);
-            pickupInput.value = `📍 ${niceAddress}`;
-            locInfo.textContent = `تم تحديد موقعك: ${niceAddress}`;
-            setStatus("تم تحديد الموقع بنجاح.", "ok");
-          } catch (e) {
-            const fallback = cityInput.value.trim() || "الطائف";
-            pickupInput.value = `📍 ${fallback}`;
-            locInfo.textContent = "تم تحديد الإحداثيات، لكن تعذر جلب وصف الموقع النصي.";
-            setStatus("تم تحديد الموقع، لكن تعذر جلب الوصف التفصيلي.", "ok");
-          } finally {
-            locBtn.disabled = false;
-            locBtn.textContent = "📍 تحديد موقعي الحالي";
-          }
+         try {
+  const niceAddress = await reverseGeocode(lat, lon);
+
+  if (niceAddress && niceAddress.trim()) {
+    pickupInput.value = `📍 ${niceAddress}`;
+    locInfo.textContent = `تم تحديد موقعك: ${niceAddress}`;
+    setStatus("تم تحديد الموقع والوصف بنجاح.", "ok");
+  } else {
+    throw new Error("empty address");
+  }
+
+} catch (e) {
+  // ❌ لا نضع fallback وهمي
+  pickupInput.value = "";
+  locInfo.textContent = "تم تحديد الموقع (GPS) لكن تعذر جلب الوصف النصي.";
+  setStatus("تم تحديد الموقع، لكن سيتم تحديد العنوان لاحقًا.", "err");
+
+} finally {
+  locBtn.disabled = false;
+  locBtn.textContent = "📍 تحديد موقعي الحالي";
+}
         },
         (err) => {
           const message = err && err.message ? err.message : "تعذر تحديد الموقع";
