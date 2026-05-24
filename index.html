@@ -285,7 +285,7 @@
 
 } catch (e) {
   // ❌ لا نضع fallback وهمي
-  pickupInput.value = "";
+  pickupInput.value = "📍 تم تحديد موقعك (GPS)";
   locInfo.textContent = "تم تحديد الموقع (GPS) لكن تعذر جلب الوصف النصي.";
   setStatus("تم تحديد الموقع، لكن سيتم تحديد العنوان لاحقًا.", "err");
 
