@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🚕 طلب مشوار</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     :root {
       --bg1: #0f172a;
@@ -126,6 +128,66 @@
     .ok { color: #86efac; }
     .err { color: #fca5a5; }
 
+
+    .map-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+
+    .map-card {
+      width: 100%;
+      max-width: 620px;
+      height: 82vh;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 18px 40px rgba(0,0,0,.45);
+    }
+
+    .map-header {
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .map-help {
+      padding: 0 14px 10px;
+      color: var(--hint);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    #map {
+      flex: 1;
+      min-height: 360px;
+      direction: ltr;
+    }
+
+    .map-actions {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.16);
+    }
+
     .footer-note {
       margin-top: 14px;
       color: var(--hint);
@@ -149,7 +211,10 @@
       <div id="locInfo" class="loc-box">لم يتم تحديد الموقع بعد.</div>
 
       <label for="destination">🎯 الوجهة</label>
-      <input id="destination" placeholder="إلى أين تريد الذهاب؟" />
+      <input id="destination" placeholder="اكتب الوجهة أو حددها من الخريطة" />
+
+      <button id="destMapBtn" class="btn" type="button">🏁 تحديد الوجهة على الخريطة</button>
+      <div id="destInfo" class="loc-box">لم يتم تحديد الوجهة من الخريطة بعد.</div>
 
       <div class="row">
         <div>
@@ -181,6 +246,21 @@
     </div>
   </div>
 
+  <div id="mapModal" class="map-modal">
+    <div class="map-card">
+      <div class="map-header">
+        <div>🏁 اختر الوجهة من الخريطة</div>
+        <button id="closeMapBtn" class="btn btn-secondary" type="button" style="width:auto;margin:0;padding:9px 12px;">إغلاق</button>
+      </div>
+      <div class="map-help">حرّك الخريطة واضغط على مكان الوجهة، ثم اضغط "اعتماد الوجهة".</div>
+      <div id="map"></div>
+      <div class="map-actions">
+        <button id="confirmDestBtn" class="btn" type="button">✅ اعتماد الوجهة</button>
+        <button id="cancelDestBtn" class="btn btn-secondary" type="button">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 
@@ -194,6 +274,15 @@
 
     let lat = null;
     let lon = null;
+
+    let destinationLat = null;
+    let destinationLon = null;
+
+    let map = null;
+    let destinationMarker = null;
+    let tempDestinationLat = null;
+    let tempDestinationLon = null;
+
     let sending = false;
 
     const pickupInput = document.getElementById("pickup_text");
@@ -203,6 +292,12 @@
     const cityInput = document.getElementById("city");
     const locBtn = document.getElementById("locBtn");
     const locInfo = document.getElementById("locInfo");
+    const destMapBtn = document.getElementById("destMapBtn");
+    const destInfo = document.getElementById("destInfo");
+    const mapModal = document.getElementById("mapModal");
+    const closeMapBtn = document.getElementById("closeMapBtn");
+    const confirmDestBtn = document.getElementById("confirmDestBtn");
+    const cancelDestBtn = document.getElementById("cancelDestBtn");
     const statusEl = document.getElementById("status");
 
     function setStatus(text, type = "") {
@@ -254,6 +349,91 @@
 
       return data.display_name || "موقع مرسل";
     }
+
+    function openDestinationMap() {
+      const centerLat = lat || 21.2703;
+      const centerLon = lon || 40.4158;
+
+      mapModal.style.display = "flex";
+
+      setTimeout(() => {
+        if (!map) {
+          map = L.map("map").setView([centerLat, centerLon], 14);
+
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "© OpenStreetMap"
+          }).addTo(map);
+
+          map.on("click", async (e) => {
+            tempDestinationLat = Number(e.latlng.lat.toFixed(6));
+            tempDestinationLon = Number(e.latlng.lng.toFixed(6));
+
+            if (!destinationMarker) {
+              destinationMarker = L.marker([tempDestinationLat, tempDestinationLon]).addTo(map);
+            } else {
+              destinationMarker.setLatLng([tempDestinationLat, tempDestinationLon]);
+            }
+
+            destInfo.textContent = "تم اختيار نقطة الوجهة، جاري جلب الوصف...";
+            setStatus("تم اختيار الوجهة من الخريطة. اضغط اعتماد الوجهة.", "ok");
+          });
+        } else {
+          map.setView([centerLat, centerLon], 14);
+        }
+
+        map.invalidateSize();
+
+        if (destinationLat && destinationLon) {
+          tempDestinationLat = destinationLat;
+          tempDestinationLon = destinationLon;
+
+          if (!destinationMarker) {
+            destinationMarker = L.marker([destinationLat, destinationLon]).addTo(map);
+          } else {
+            destinationMarker.setLatLng([destinationLat, destinationLon]);
+          }
+
+          map.setView([destinationLat, destinationLon], 15);
+        }
+      }, 250);
+    }
+
+    function closeDestinationMap() {
+      mapModal.style.display = "none";
+    }
+
+    destMapBtn.addEventListener("click", openDestinationMap);
+    closeMapBtn.addEventListener("click", closeDestinationMap);
+    cancelDestBtn.addEventListener("click", closeDestinationMap);
+
+    confirmDestBtn.addEventListener("click", async () => {
+      if (!tempDestinationLat || !tempDestinationLon) {
+        setStatus("اختر الوجهة من الخريطة أولًا.", "err");
+        return;
+      }
+
+      destinationLat = tempDestinationLat;
+      destinationLon = tempDestinationLon;
+
+      try {
+        const niceAddress = await reverseGeocode(destinationLat, destinationLon);
+
+        if (niceAddress && niceAddress.trim()) {
+          destinationInput.value = `🏁 ${niceAddress}`;
+          destInfo.textContent = `تم تحديد الوجهة: ${niceAddress}`;
+          setStatus("تم اعتماد الوجهة من الخريطة.", "ok");
+        } else {
+          throw new Error("empty destination address");
+        }
+      } catch (e) {
+        destinationInput.value = "🏁 وجهة محددة من الخريطة";
+        destInfo.textContent = `تم تحديد الوجهة بالإحداثيات: ${destinationLat}, ${destinationLon}`;
+        setStatus("تم اعتماد الوجهة، لكن تعذر جلب الوصف النصي.", "ok");
+      }
+
+      closeDestinationMap();
+    });
 
     locBtn.addEventListener("click", () => {
       if (!navigator.geolocation) {
@@ -325,7 +505,7 @@
       }
 
       if (!destination) {
-        setStatus("اكتب الوجهة أولًا.", "err");
+        setStatus("اكتب الوجهة أو حددها من الخريطة أولًا.", "err");
         sending = false;
         return;
       }
@@ -335,7 +515,15 @@
         pickup_text: pickupText || `📍 ${city}`,
         pickup_lat: lat,
         pickup_lon: lon,
+
+        // نبقي destination كما هو حتى لا نكسر bot.py القديم
         destination,
+
+        // حقول جديدة للوجهة من الخريطة
+        destination_text: destination,
+        destination_lat: destinationLat,
+        destination_lon: destinationLon,
+
         passengers,
         notes,
         city
