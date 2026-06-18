@@ -860,6 +860,15 @@ async function renewSubscription() {
 
     if (tg) tg.MainButton.onClick(submitTrip);
     initApp();
+    setInterval(() => {
+  if (currentMode === "driver") {
+    loadDriverHome();
+  }
+
+  if (currentMode === "client") {
+    loadClientHome();
+  }
+}, 5000);
   </script>
 </body>
 </html>
