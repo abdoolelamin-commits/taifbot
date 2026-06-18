@@ -425,7 +425,21 @@ $("switchModeFromDriver").onclick = () => {
 
   if (tg) tg.MainButton.hide();
 };
+$("switchModeFromClientRequest").onclick = () => {
 
+  localStorage.removeItem("ym_mode");
+
+  currentMode = null;
+
+  clientSection.style.display = "none";
+
+  driverSection.style.display = "none";
+
+  modeSection.style.display = "block";
+
+  if (tg) tg.MainButton.hide();
+
+};
     async function loadClientHome() {
       const userId = getUserId();
       const data = await api(`/my_trips/${userId}`);
