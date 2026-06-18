@@ -308,14 +308,19 @@
     const cancelDestBtn = $("cancelDestBtn");
 
     function getUserId() {
-    const params = new URLSearchParams(window.location.search);
+
+  console.log(window.Telegram);
+  console.log(window.Telegram?.WebApp);
+  console.log(window.Telegram?.WebApp?.initDataUnsafe);
+
+  const params = new URLSearchParams(window.location.search);
 
   return (
-    tg?.initDataUnsafe?.user?.id ||
-    params.get("user_id") ||
-    params.get("client_id") ||
-    params.get("driver_id") ||
-    null
+      window.Telegram?.WebApp?.initDataUnsafe?.user?.id ||
+      params.get("user_id") ||
+      params.get("client_id") ||
+      params.get("driver_id") ||
+      6843564091
   );
 }
 
