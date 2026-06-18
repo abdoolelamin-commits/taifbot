@@ -346,7 +346,27 @@
   const btn = $("switchModeFromClientRequest");
   if (btn) btn.style.display = show ? "block" : "none";
 }
+function switchAccount() {
 
+  localStorage.removeItem("ym_mode");
+
+  currentMode = null;
+
+  clientSection.style.display = "none";
+
+  driverSection.style.display = "none";
+
+  modeSection.style.display = "block";
+
+  if (tg) tg.MainButton.hide();
+
+}
+
+$("switchModeFromClient").onclick = switchAccount;
+
+$("switchModeFromDriver").onclick = switchAccount;
+
+$("switchModeFromClientRequest").onclick = switchAccount;
     async function api(path, options = {}) {
       const res = await fetch(`${API_URL}${path}`, options);
       return await res.json();
