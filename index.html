@@ -414,6 +414,21 @@ const savedMode = urlMode || localStorage.getItem("ym_mode");
 
   if (tg) tg.MainButton.hide();
 };
+    $("switchModeFromClientRequest").onclick = () => {
+
+  localStorage.removeItem("ym_mode");
+
+  currentMode = null;
+
+  clientSection.style.display = "none";
+
+  driverSection.style.display = "none";
+
+  modeSection.style.display = "block";
+
+  if (tg) tg.MainButton.hide();
+
+};
 
 $("switchModeFromDriver").onclick = () => {
   localStorage.removeItem("ym_mode");
