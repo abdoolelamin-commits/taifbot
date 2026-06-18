@@ -398,8 +398,27 @@ const savedMode = urlMode || localStorage.getItem("ym_mode");
 
     $("enterClientBtn").onclick = openClientMode;
     $("enterDriverBtn").onclick = openDriverMode;
-    $("switchModeFromClient").onclick = () => { localStorage.removeItem("ym_mode"); location.reload(); };
-    $("switchModeFromDriver").onclick = () => { localStorage.removeItem("ym_mode"); location.reload(); };
+    $("switchModeFromClient").onclick = () => {
+  localStorage.removeItem("ym_mode");
+  currentMode = null;
+
+  clientSection.style.display = "none";
+  driverSection.style.display = "none";
+  modeSection.style.display = "block";
+
+  if (tg) tg.MainButton.hide();
+};
+
+$("switchModeFromDriver").onclick = () => {
+  localStorage.removeItem("ym_mode");
+  currentMode = null;
+
+  clientSection.style.display = "none";
+  driverSection.style.display = "none";
+  modeSection.style.display = "block";
+
+  if (tg) tg.MainButton.hide();
+};
 
     async function loadClientHome() {
       const userId = getUserId();
