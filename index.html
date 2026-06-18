@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🚕 يلا مشوار</title>
+  <title>🚕 يلا-مشوار</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -19,6 +19,7 @@
       --primary: #22c55e;
       --primary-dark: #16a34a;
       --danger: #ef4444;
+      --warning: #f59e0b;
       --border: rgba(255,255,255,0.12);
     }
 
@@ -33,27 +34,11 @@
       padding: 18px;
     }
 
-    .container {
-      max-width: 560px;
-      margin: 0 auto;
-    }
+    .container { max-width: 580px; margin: 0 auto; }
 
-    .hero {
-      text-align: center;
-      margin: 10px 0 18px;
-    }
-
-    .hero h1 {
-      margin: 0 0 8px;
-      font-size: 28px;
-    }
-
-    .hero p {
-      margin: 0;
-      color: var(--hint);
-      line-height: 1.8;
-      font-size: 15px;
-    }
+    .hero { text-align: center; margin: 10px 0 18px; }
+    .hero h1 { margin: 0 0 8px; font-size: 28px; }
+    .hero p { margin: 0; color: var(--hint); line-height: 1.8; font-size: 15px; }
 
     .card {
       background: var(--card);
@@ -62,14 +47,11 @@
       border: 1px solid var(--border);
       border-radius: 22px;
       padding: 18px;
+      margin-bottom: 14px;
       box-shadow: 0 10px 30px rgba(0,0,0,.22);
     }
 
-    label {
-      display: block;
-      margin: 14px 0 8px;
-      font-weight: 700;
-    }
+    label { display: block; margin: 14px 0 8px; font-weight: 700; }
 
     input, textarea, select {
       width: 100%;
@@ -82,16 +64,9 @@
       outline: none;
     }
 
-    textarea {
-      min-height: 88px;
-      resize: vertical;
-    }
+    textarea { min-height: 88px; resize: vertical; }
 
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
     .btn {
       width: 100%;
@@ -106,20 +81,12 @@
       cursor: pointer;
     }
 
-    .btn-danger {
-      background: var(--danger);
-    }
+    .btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    .btn-danger { background: var(--danger); }
+    .btn-warning { background: var(--warning); }
+    .btn-secondary { background: rgba(255,255,255,0.16); }
 
-    .btn-secondary {
-      background: rgba(255,255,255,0.16);
-    }
-
-    .btn:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-
-    .loc-box {
+    .loc-box, .info-box {
       margin-top: 10px;
       border-radius: 14px;
       padding: 12px 14px;
@@ -129,24 +96,18 @@
       font-size: 14px;
     }
 
-    .status {
-      margin-top: 12px;
-      font-size: 14px;
-      line-height: 1.8;
-    }
-
+    .status { margin-top: 12px; font-size: 14px; line-height: 1.8; }
     .ok { color: #86efac; }
     .err { color: #fca5a5; }
 
-    .trip-line {
-      margin-top: 10px;
-      line-height: 1.8;
-      color: var(--hint);
-    }
+    .trip-line { margin-top: 10px; line-height: 1.8; color: var(--hint); }
+    .trip-line strong { color: #fff; }
 
-    .trip-line strong {
-      color: #fff;
-    }
+    .section { display: none; }
+    .small { color: var(--hint); font-size: 13px; line-height: 1.7; }
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    .mode-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
 
     .map-modal {
       position: fixed;
@@ -182,111 +143,92 @@
       font-weight: 700;
     }
 
-    .map-help {
-      padding: 0 14px 10px;
-      color: var(--hint);
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
-    #map {
-      flex: 1;
-      min-height: 360px;
-      direction: ltr;
-    }
-
-    .map-actions {
-      padding: 12px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      background: rgba(255,255,255,0.06);
-    }
-
-    .footer-note {
-      margin-top: 14px;
-      color: var(--hint);
-      font-size: 13px;
-      line-height: 1.8;
-    }
+    .map-help { padding: 0 14px 10px; color: var(--hint); font-size: 13px; line-height: 1.7; }
+    #map { flex: 1; min-height: 360px; direction: ltr; }
+    .map-actions { padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(255,255,255,0.06); }
   </style>
 </head>
 
 <body>
   <div class="container">
-
-    <div id="activeTripCard" class="card" style="display:none;margin-bottom:16px;">
-      <h2 style="margin-top:0">🚕 رحلتك الحالية</h2>
-
-      <div class="trip-line">
-        <strong>الحالة:</strong>
-        <span id="tripStatus">-</span>
-      </div>
-
-      <div class="trip-line">
-        <strong>الوجهة:</strong>
-        <span id="tripDestination">-</span>
-      </div>
-
-      <div class="trip-line">
-        <strong>السائق:</strong>
-        <span id="driverName">-</span>
-      </div>
-
-      <div class="trip-line">
-        <strong>السيارة:</strong>
-        <span id="driverCar">-</span>
-      </div>
-
-      <button id="cancelTripBtn" class="btn btn-danger" type="button">
-        ❌ إلغاء الرحلة
-      </button>
+    <div class="hero" id="mainHero">
+      <h1>🚕 يلا-مشوار</h1>
+      <p id="heroText">من المجتمع وإلى المجتمع.</p>
     </div>
 
-    <div class="hero">
-      <h1>🚕 طلب مشوار</h1>
-      <p>أدخل بيانات الرحلة وسنرسل طلبك مباشرة إلى السائقين المتاحين.</p>
+    <div id="modeSection" class="section card">
+      <h2 style="margin-top:0">اختر طريقة الدخول</h2>
+      <p class="small">حسابك يعمل كعميل وسائق، اختر الواجهة المناسبة الآن.</p>
+      <div class="mode-grid">
+        <button id="enterClientBtn" class="btn" type="button">🚕 دخول كعميل</button>
+        <button id="enterDriverBtn" class="btn btn-secondary" type="button">🚗 دخول كسائق</button>
+      </div>
     </div>
 
-    <div id="requestCard" class="card">
-      <label for="pickup_text">📍 نقطة الانطلاق</label>
-      <input id="pickup_text" placeholder="اضغط تحديد موقعي فقط" readonly />
-
-      <button id="locBtn" class="btn" type="button">📍 تحديد موقعي الحالي</button>
-      <div id="locInfo" class="loc-box">لم يتم تحديد الموقع بعد.</div>
-
-      <label for="destination">🎯 الوجهة</label>
-      <input id="destination" placeholder="اكتب الوجهة أو حددها من الخريطة" />
-
-      <button id="destMapBtn" class="btn" type="button">🏁 تحديد الوجهة على الخريطة</button>
-      <div id="destInfo" class="loc-box">لم يتم تحديد الوجهة من الخريطة بعد.</div>
-
-      <div class="row">
-        <div>
-          <label for="passengers">👥 عدد الركاب</label>
-          <select id="passengers">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="city">🏙️ المدينة</label>
-          <input id="city" value="الطائف" />
-        </div>
+    <div id="clientSection" class="section">
+      <div id="clientActiveTripCard" class="card" style="display:none;">
+        <h2 style="margin-top:0">🚕 رحلتك الحالية</h2>
+        <div class="trip-line"><strong>الحالة:</strong> <span id="clientTripStatus">-</span></div>
+        <div class="trip-line"><strong>الوجهة:</strong> <span id="clientTripDestination">-</span></div>
+        <div class="trip-line"><strong>السائق:</strong> <span id="clientDriverName">-</span></div>
+        <div class="trip-line"><strong>السيارة:</strong> <span id="clientDriverCar">-</span></div>
+        <div id="clientMapHint" class="info-box" style="display:none"></div>
+        <div id="clientOffersBox" class="info-box" style="display:none"></div>
+        <button id="clientCancelTripBtn" class="btn btn-danger" type="button">❌ إلغاء الرحلة</button>
+        <button id="switchModeFromClient" class="btn btn-secondary" type="button" style="display:none">🔄 تبديل الحساب</button>
       </div>
 
-      <label for="notes">📝 ملاحظات</label>
-      <textarea id="notes" placeholder="مثال: عندي شنط / أمام البوابة"></textarea>
+      <div id="clientRequestCard" class="card">
+        <h2 style="margin-top:0">🚕 طلب مشوار</h2>
+        <p class="small">أدخل بيانات الرحلة وسنرسل طلبك مباشرة إلى السائقين المتاحين.</p>
 
-      <div id="status" class="status"></div>
+        <label for="pickup_text">📍 نقطة الانطلاق</label>
+        <input id="pickup_text" placeholder="اضغط تحديد موقعي فقط" readonly />
+        <button id="locBtn" class="btn" type="button">📍 تحديد موقعي الحالي</button>
+        <div id="locInfo" class="loc-box">لم يتم تحديد الموقع بعد.</div>
 
-      <div class="footer-note">
-        سيتم استخدام موقعك الحالي لالتقاط نقطة الانطلاق بدقة.
+        <label for="destination">🎯 الوجهة</label>
+        <input id="destination" placeholder="اكتب الوجهة أو حددها من الخريطة" />
+        <button id="destMapBtn" class="btn" type="button">🏁 تحديد الوجهة على الخريطة</button>
+        <div id="destInfo" class="loc-box">لم يتم تحديد الوجهة من الخريطة بعد.</div>
+
+        <div class="row">
+          <div>
+            <label for="passengers">👥 عدد الركاب</label>
+            <select id="passengers">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+              <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            </select>
+          </div>
+          <div>
+            <label for="city">🏙️ المدينة</label>
+            <input id="city" value="الطائف" />
+          </div>
+        </div>
+
+        <label for="notes">📝 ملاحظات</label>
+        <textarea id="notes" placeholder="مثال: عندي شنط / أمام البوابة"></textarea>
+        <div id="status" class="status"></div>
+      </div>
+    </div>
+
+    <div id="driverSection" class="section">
+      <div class="card">
+        <h2 style="margin-top:0">🚗 لوحة السائق</h2>
+        <div id="driverProfileBox" class="info-box">جاري تحميل بيانات السائق...</div>
+        <button id="driverToggleAvailableBtn" class="btn" type="button">تغيير حالة التوفر</button>
+        <button id="driverUpdateLocationBtn" class="btn btn-secondary" type="button">📍 تحديث موقعي</button>
+        <button id="switchModeFromDriver" class="btn btn-secondary" type="button" style="display:none">🔄 تبديل الحساب</button>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">🚕 رحلتي الحالية</h2>
+        <div id="driverActiveTripBox" class="info-box">لا توجد رحلة حالية.</div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">🚗 الطلبات القريبة</h2>
+        <div id="driverRequestsBox" class="info-box">جاري تحميل الطلبات...</div>
       </div>
     </div>
   </div>
@@ -295,9 +237,7 @@
     <div class="map-card">
       <div class="map-header">
         <div>🏁 اختر الوجهة من الخريطة</div>
-        <button id="closeMapBtn" class="btn btn-secondary" type="button" style="width:auto;margin:0;padding:9px 12px;">
-          إغلاق
-        </button>
+        <button id="closeMapBtn" class="btn btn-secondary" type="button" style="width:auto;margin:0;padding:9px 12px;">إغلاق</button>
       </div>
       <div class="map-help">حرّك الخريطة واضغط على مكان الوجهة، ثم اضغط "اعتماد الوجهة".</div>
       <div id="map"></div>
@@ -320,46 +260,55 @@
       tg.MainButton.enable();
     }
 
-    let lat = null;
-    let lon = null;
-    let destinationLat = null;
-    let destinationLon = null;
-    let map = null;
-    let destinationMarker = null;
-    let tempDestinationLat = null;
-    let tempDestinationLon = null;
+    let meData = null;
+    let currentMode = null;
+    let lat = null, lon = null;
+    let destinationLat = null, destinationLon = null;
+    let map = null, destinationMarker = null, tempDestinationLat = null, tempDestinationLon = null;
     let sending = false;
 
-    const pickupInput = document.getElementById("pickup_text");
-    const destinationInput = document.getElementById("destination");
-    const passengersInput = document.getElementById("passengers");
-    const notesInput = document.getElementById("notes");
-    const cityInput = document.getElementById("city");
-    const locBtn = document.getElementById("locBtn");
-    const locInfo = document.getElementById("locInfo");
-    const destMapBtn = document.getElementById("destMapBtn");
-    const destInfo = document.getElementById("destInfo");
-    const mapModal = document.getElementById("mapModal");
-    const closeMapBtn = document.getElementById("closeMapBtn");
-    const confirmDestBtn = document.getElementById("confirmDestBtn");
-    const cancelDestBtn = document.getElementById("cancelDestBtn");
-    const statusEl = document.getElementById("status");
+    const $ = (id) => document.getElementById(id);
+    const mainHero = $("mainHero");
+    const heroText = $("heroText");
+    const modeSection = $("modeSection");
+    const clientSection = $("clientSection");
+    const driverSection = $("driverSection");
 
-    const activeTripCard = document.getElementById("activeTripCard");
-    const requestCard = document.getElementById("requestCard");
-    const tripStatus = document.getElementById("tripStatus");
-    const tripDestination = document.getElementById("tripDestination");
-    const driverName = document.getElementById("driverName");
-    const driverCar = document.getElementById("driverCar");
-    const cancelTripBtn = document.getElementById("cancelTripBtn");
+    const pickupInput = $("pickup_text");
+    const destinationInput = $("destination");
+    const passengersInput = $("passengers");
+    const notesInput = $("notes");
+    const cityInput = $("city");
+    const locBtn = $("locBtn");
+    const locInfo = $("locInfo");
+    const destMapBtn = $("destMapBtn");
+    const destInfo = $("destInfo");
+    const statusEl = $("status");
 
-    function getClientId() {
+    const clientActiveTripCard = $("clientActiveTripCard");
+    const clientRequestCard = $("clientRequestCard");
+    const clientTripStatus = $("clientTripStatus");
+    const clientTripDestination = $("clientTripDestination");
+    const clientDriverName = $("clientDriverName");
+    const clientDriverCar = $("clientDriverCar");
+    const clientCancelTripBtn = $("clientCancelTripBtn");
+    const clientOffersBox = $("clientOffersBox");
+    const clientMapHint = $("clientMapHint");
+
+    const driverProfileBox = $("driverProfileBox");
+    const driverToggleAvailableBtn = $("driverToggleAvailableBtn");
+    const driverUpdateLocationBtn = $("driverUpdateLocationBtn");
+    const driverActiveTripBox = $("driverActiveTripBox");
+    const driverRequestsBox = $("driverRequestsBox");
+
+    const mapModal = $("mapModal");
+    const closeMapBtn = $("closeMapBtn");
+    const confirmDestBtn = $("confirmDestBtn");
+    const cancelDestBtn = $("cancelDestBtn");
+
+    function getUserId() {
       const params = new URLSearchParams(window.location.search);
-      return (
-        tg?.initDataUnsafe?.user?.id ||
-        params.get("client_id") ||
-        null
-      );
+      return tg?.initDataUnsafe?.user?.id || params.get("user_id") || params.get("client_id") || null;
     }
 
     function setStatus(text, type = "") {
@@ -367,78 +316,269 @@
       statusEl.textContent = text;
     }
 
-    async function loadMyTrips() {
-      const clientId = getClientId();
-      if (!clientId) return;
+    function showOnly(section) {
+      modeSection.style.display = "none";
+      clientSection.style.display = "none";
+      driverSection.style.display = "none";
+      section.style.display = "block";
+    }
 
-      try {
-        const res = await fetch(`${API_URL}/my_trips/${clientId}`);
-        const data = await res.json();
+    function showSwitchButtons(show) {
+      $("switchModeFromClient").style.display = show ? "block" : "none";
+      $("switchModeFromDriver").style.display = show ? "block" : "none";
+    }
 
-        if (!data.active_trip) return;
+    async function api(path, options = {}) {
+      const res = await fetch(`${API_URL}${path}`, options);
+      return await res.json();
+    }
 
-        const trip = data.active_trip;
-
-        activeTripCard.style.display = "block";
-        requestCard.style.display = "none";
-        document.querySelector(".hero").style.display = "none";
-
-        tripStatus.innerText = trip.status || "-";
-        tripDestination.innerText = trip.destination_text || "-";
-        driverName.innerText = trip.driver_name || "-";
-        driverCar.innerText = trip.driver_car || "-";
-
-        if (tg) tg.MainButton.hide();
-
-        cancelTripBtn.onclick = async () => {
-          cancelTripBtn.disabled = true;
-          cancelTripBtn.innerText = "جاري الإلغاء...";
-
-          await fetch(`${API_URL}/trip/${trip.id}/cancel`, {
-            method: "POST"
-          });
-
-          location.reload();
-        };
-      } catch (e) {
-        console.log("loadMyTrips error:", e);
+    async function initApp() {
+      const userId = getUserId();
+      if (!userId) {
+        heroText.textContent = "افتح الصفحة من داخل تيليجرام أو أضف ?user_id=... للتجربة.";
+        return;
       }
+
+      meData = await api(`/me/${userId}`);
+      const savedMode = localStorage.getItem("ym_mode");
+      const both = meData.is_client && meData.is_driver;
+      showSwitchButtons(both);
+
+      if (both && !savedMode) {
+        showOnly(modeSection);
+        if (tg) tg.MainButton.hide();
+        return;
+      }
+
+      if (both && savedMode === "driver") return openDriverMode();
+      if (both && savedMode === "client") return openClientMode();
+      if (meData.is_driver && !meData.is_client) return openDriverMode();
+      return openClientMode();
+    }
+
+    function openClientMode() {
+      currentMode = "client";
+      localStorage.setItem("ym_mode", "client");
+      mainHero.querySelector("h1").textContent = "🚕 يلا-مشوار";
+      heroText.textContent = "اطلب مشوارك وتابع السائق من نفس الشاشة.";
+      showOnly(clientSection);
+      if (tg) {
+        tg.MainButton.setText("🚀 إرسال الطلب");
+        tg.MainButton.show();
+        tg.MainButton.enable();
+      }
+      loadClientHome();
+    }
+
+    function openDriverMode() {
+      currentMode = "driver";
+      localStorage.setItem("ym_mode", "driver");
+      mainHero.querySelector("h1").textContent = "🚗 لوحة السائق";
+      heroText.textContent = "طلبات قريبة، عروض، وبدء/إنهاء الرحلة.";
+      showOnly(driverSection);
+      if (tg) tg.MainButton.hide();
+      loadDriverHome();
+    }
+
+    $("enterClientBtn").onclick = openClientMode;
+    $("enterDriverBtn").onclick = openDriverMode;
+    $("switchModeFromClient").onclick = () => { localStorage.removeItem("ym_mode"); location.reload(); };
+    $("switchModeFromDriver").onclick = () => { localStorage.removeItem("ym_mode"); location.reload(); };
+
+    async function loadClientHome() {
+      const userId = getUserId();
+      const data = await api(`/my_trips/${userId}`);
+
+      if (!data.active_trip) {
+        clientActiveTripCard.style.display = "none";
+        clientRequestCard.style.display = "block";
+        return;
+      }
+
+      const trip = data.active_trip;
+      clientActiveTripCard.style.display = "block";
+      clientRequestCard.style.display = "none";
+      clientTripStatus.innerText = trip.status || "-";
+      clientTripDestination.innerText = trip.destination_text || "-";
+      clientDriverName.innerText = trip.driver_name || "-";
+      clientDriverCar.innerText = trip.driver_car || "-";
+
+      if (trip.driver_lat && trip.driver_lon) {
+        clientMapHint.style.display = "block";
+        clientMapHint.innerHTML = `📍 موقع السائق: ${trip.driver_lat}, ${trip.driver_lon}<br><a style="color:#86efac" target="_blank" href="https://www.google.com/maps?q=${trip.driver_lat},${trip.driver_lon}">فتح موقع السائق</a>`;
+      }
+
+      if (trip.status === "open" || trip.status === "bidding") {
+        await loadClientOffers(trip.id);
+      } else {
+        clientOffersBox.style.display = "none";
+      }
+
+      clientCancelTripBtn.onclick = async () => {
+        clientCancelTripBtn.disabled = true;
+        clientCancelTripBtn.innerText = "جاري الإلغاء...";
+        await api(`/trip/${trip.id}/cancel`, { method: "POST" });
+        location.reload();
+      };
+
+      if (tg) tg.MainButton.hide();
+    }
+
+    async function loadClientOffers(tripId) {
+      const data = await api(`/trip/${tripId}/offers`);
+      const offers = data.offers || [];
+      if (!offers.length) {
+        clientOffersBox.style.display = "block";
+        clientOffersBox.innerHTML = "لم تصل عروض حتى الآن.";
+        return;
+      }
+      clientOffersBox.style.display = "block";
+      clientOffersBox.innerHTML = offers.map(o => `
+        <div class="divider"></div>
+        <div><strong>🚗 ${o.driver_name || "سائق"}</strong></div>
+        <div>السيارة: ${o.driver_car || "-"}</div>
+        <div>السعر: ${o.price_text || "-"}</div>
+        <div>الوقت: ${o.eta_min || "-"} دقيقة</div>
+        <button class="btn" type="button" onclick="acceptOffer(${tripId}, ${o.id})">✅ قبول العرض</button>
+      `).join("");
+    }
+
+    async function acceptOffer(tripId, offerId) {
+      await api(`/trip/${tripId}/accept_offer/${offerId}`, { method: "POST" });
+      location.reload();
+    }
+    window.acceptOffer = acceptOffer;
+
+    async function loadDriverHome() {
+      const driverId = getUserId();
+      const profile = await api(`/driver/${driverId}/profile`);
+      const sub = await api(`/driver/${driverId}/subscription`);
+      const d = profile.driver;
+      driverProfileBox.innerHTML = `
+        <strong>${d.name || "سائق"}</strong><br>
+        🚗 ${d.car || "-"}<br>
+        🏙️ ${d.city || "-"}<br>
+        الحالة: ${d.available ? "🟢 متاح" : "🔴 غير متاح"}<br>
+        الاشتراك: ${sub.active ? "✅ نشط" : "❌ منتهي"} - ${sub.days_left || 0} يوم
+      `;
+      driverToggleAvailableBtn.innerText = d.available ? "🔴 اجعلني غير متاح" : "🟢 اجعلني متاح";
+      driverToggleAvailableBtn.onclick = async () => {
+        await api(`/driver/${driverId}/availability`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ available: d.available ? 0 : 1 })
+        });
+        loadDriverHome();
+      };
+
+      driverUpdateLocationBtn.onclick = () => updateDriverLocation(driverId);
+      await loadDriverActiveTrip(driverId);
+      await loadDriverRequests(driverId);
+    }
+
+    async function loadDriverActiveTrip(driverId) {
+      const data = await api(`/driver/${driverId}/active_trip`);
+      const trip = data.active_trip;
+      if (!trip) {
+        driverActiveTripBox.innerHTML = "لا توجد رحلة حالية.";
+        return;
+      }
+      const mapLink = trip.pickup_lat && trip.pickup_lon
+        ? `<br><a style="color:#86efac" target="_blank" href="https://www.google.com/maps?q=${trip.pickup_lat},${trip.pickup_lon}">📍 فتح موقع العميل</a>`
+        : "";
+
+      const startBtn = trip.status === "assigned" ? `<button class="btn" onclick="driverStartTrip(${trip.id})">🚗 بدء الرحلة</button>` : "";
+      const completeBtn = trip.status === "started" ? `<button class="btn" onclick="driverCompleteTrip(${trip.id})">✅ إنهاء الرحلة</button>` : "";
+
+      driverActiveTripBox.innerHTML = `
+        <strong>طلب #${trip.id}</strong><br>
+        الحالة: ${trip.status}<br>
+        📍 الانطلاق: ${trip.pickup_text || "-"}<br>
+        🎯 الوجهة: ${trip.destination_text || "-"}<br>
+        👥 الركاب: ${trip.passengers || "-"}
+        ${mapLink}
+        ${startBtn}
+        ${completeBtn}
+      `;
+    }
+
+    async function driverStartTrip(tripId) {
+      await api(`/trip/${tripId}/start`, { method: "POST" });
+      loadDriverHome();
+    }
+    async function driverCompleteTrip(tripId) {
+      await api(`/trip/${tripId}/complete`, { method: "POST" });
+      loadDriverHome();
+    }
+    window.driverStartTrip = driverStartTrip;
+    window.driverCompleteTrip = driverCompleteTrip;
+
+    async function loadDriverRequests(driverId) {
+      const data = await api(`/driver/${driverId}/requests`);
+      const requests = data.requests || [];
+      if (!requests.length) {
+        driverRequestsBox.innerHTML = "لا توجد طلبات قريبة الآن.";
+        return;
+      }
+      driverRequestsBox.innerHTML = requests.map(r => `
+        <div class="divider"></div>
+        <strong>طلب #${r.id}</strong><br>
+        📍 الانطلاق: ${r.pickup_text || "غير ظاهر"}<br>
+        🎯 الوجهة: ${r.destination_text || "-"}<br>
+        👥 الركاب: ${r.passengers || "-"}<br>
+        ${r.my_price ? `عرضك الحالي: ${r.my_price}` : ""}
+        <input id="offerPrice_${r.id}" placeholder="اكتب السعر" value="${r.my_price || ""}" />
+        <input id="offerEta_${r.id}" placeholder="زمن الوصول بالدقائق" value="${r.my_eta || ""}" />
+        <button class="btn" onclick="sendDriverOffer(${r.id})">💰 إرسال العرض</button>
+      `).join("");
+    }
+
+    async function sendDriverOffer(tripId) {
+      const driverId = getUserId();
+      const price = $(`offerPrice_${tripId}`).value.trim();
+      const eta = parseInt($(`offerEta_${tripId}`).value || "0", 10) || null;
+      if (!price) return alert("اكتب السعر أولًا");
+      await api(`/trip/${tripId}/offer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ driver_id: Number(driverId), price_text: price, eta_min: eta })
+      });
+      loadDriverHome();
+    }
+    window.sendDriverOffer = sendDriverOffer;
+
+    function updateDriverLocation(driverId) {
+      if (!navigator.geolocation) return alert("الجهاز لا يدعم تحديد الموقع");
+      driverUpdateLocationBtn.disabled = true;
+      driverUpdateLocationBtn.innerText = "جاري تحديث الموقع...";
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const dlat = Number(pos.coords.latitude.toFixed(6));
+        const dlon = Number(pos.coords.longitude.toFixed(6));
+        await api(`/driver/${driverId}/location`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat: dlat, lon: dlon, tracking_state: "online" })
+        });
+        driverUpdateLocationBtn.disabled = false;
+        driverUpdateLocationBtn.innerText = "📍 تحديث موقعي";
+        loadDriverHome();
+      }, (err) => {
+        alert("فشل تحديد الموقع: " + (err.message || ""));
+        driverUpdateLocationBtn.disabled = false;
+        driverUpdateLocationBtn.innerText = "📍 تحديث موقعي";
+      }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
     }
 
     async function reverseGeocode(lat, lon) {
       const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=ar&zoom=18&addressdetails=1&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
-
-      const res = await fetch(url, {
-        headers: { "Accept": "application/json" }
-      });
-
-      if (!res.ok) {
-        throw new Error("تعذر جلب وصف الموقع");
-      }
-
+      const res = await fetch(url, { headers: { "Accept": "application/json" } });
+      if (!res.ok) throw new Error("تعذر جلب وصف الموقع");
       const data = await res.json();
       const addr = data.address || {};
-
-      const suburb =
-        addr.suburb ||
-        addr.neighbourhood ||
-        addr.quarter ||
-        addr.city_district ||
-        "";
-
-      const road =
-        addr.road ||
-        addr.pedestrian ||
-        addr.residential ||
-        "";
-
-      const city =
-        addr.city ||
-        addr.town ||
-        addr.village ||
-        cityInput.value.trim() ||
-        "الطائف";
-
+      const suburb = addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district || "";
+      const road = addr.road || addr.pedestrian || addr.residential || "";
+      const city = addr.city || addr.town || addr.village || cityInput.value.trim() || "الطائف";
       const parts = [suburb, road, city].filter(Boolean);
       return parts.length ? parts.join("، ") : data.display_name || "موقع مرسل";
     }
@@ -446,69 +586,33 @@
     function openDestinationMap() {
       const centerLat = lat || 21.2703;
       const centerLon = lon || 40.4158;
-
       mapModal.style.display = "flex";
-
       setTimeout(() => {
         if (!map) {
           map = L.map("map").setView([centerLat, centerLon], 14);
-
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
-            attribution: "© OpenStreetMap"
-          }).addTo(map);
-
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
           map.on("click", (e) => {
             tempDestinationLat = Number(e.latlng.lat.toFixed(6));
             tempDestinationLon = Number(e.latlng.lng.toFixed(6));
-
-            if (!destinationMarker) {
-              destinationMarker = L.marker([tempDestinationLat, tempDestinationLon]).addTo(map);
-            } else {
-              destinationMarker.setLatLng([tempDestinationLat, tempDestinationLon]);
-            }
-
+            if (!destinationMarker) destinationMarker = L.marker([tempDestinationLat, tempDestinationLon]).addTo(map);
+            else destinationMarker.setLatLng([tempDestinationLat, tempDestinationLon]);
             destInfo.textContent = "تم اختيار نقطة الوجهة.";
             setStatus("تم اختيار الوجهة من الخريطة. اضغط اعتماد الوجهة.", "ok");
           });
-        } else {
-          map.setView([centerLat, centerLon], 14);
-        }
-
+        } else map.setView([centerLat, centerLon], 14);
         map.invalidateSize();
-
-        if (destinationLat && destinationLon) {
-          tempDestinationLat = destinationLat;
-          tempDestinationLon = destinationLon;
-
-          if (!destinationMarker) {
-            destinationMarker = L.marker([destinationLat, destinationLon]).addTo(map);
-          } else {
-            destinationMarker.setLatLng([destinationLat, destinationLon]);
-          }
-
-          map.setView([destinationLat, destinationLon], 15);
-        }
       }, 250);
     }
 
-    function closeDestinationMap() {
-      mapModal.style.display = "none";
-    }
-
+    function closeDestinationMap() { mapModal.style.display = "none"; }
     destMapBtn.addEventListener("click", openDestinationMap);
     closeMapBtn.addEventListener("click", closeDestinationMap);
     cancelDestBtn.addEventListener("click", closeDestinationMap);
 
     confirmDestBtn.addEventListener("click", async () => {
-      if (!tempDestinationLat || !tempDestinationLon) {
-        setStatus("اختر الوجهة من الخريطة أولًا.", "err");
-        return;
-      }
-
+      if (!tempDestinationLat || !tempDestinationLon) return setStatus("اختر الوجهة من الخريطة أولًا.", "err");
       destinationLat = tempDestinationLat;
       destinationLon = tempDestinationLon;
-
       try {
         const niceAddress = await reverseGeocode(destinationLat, destinationLon);
         destinationInput.value = `🏁 ${niceAddress}`;
@@ -519,110 +623,62 @@
         destInfo.textContent = `تم تحديد الوجهة بالإحداثيات: ${destinationLat}, ${destinationLon}`;
         setStatus("تم اعتماد الوجهة، لكن تعذر جلب الوصف النصي.", "ok");
       }
-
       closeDestinationMap();
     });
 
     locBtn.addEventListener("click", () => {
-      if (!navigator.geolocation) {
-        setStatus("هذا الجهاز لا يدعم تحديد الموقع.", "err");
-        return;
-      }
-
+      if (!navigator.geolocation) return setStatus("هذا الجهاز لا يدعم تحديد الموقع.", "err");
       setStatus("جاري تحديد الموقع...", "");
       locBtn.disabled = true;
       locBtn.textContent = "⏳ جاري التحديد...";
-
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          lat = Number(pos.coords.latitude.toFixed(6));
-          lon = Number(pos.coords.longitude.toFixed(6));
-
-          try {
-            const niceAddress = await reverseGeocode(lat, lon);
-            pickupInput.value = `📍 ${niceAddress}`;
-            locInfo.textContent = `تم تحديد موقعك: ${niceAddress}`;
-            setStatus("تم تحديد الموقع والوصف بنجاح.", "ok");
-          } catch (e) {
-            pickupInput.value = "📍 تم تحديد موقعك (GPS)";
-            locInfo.textContent = "تم تحديد الموقع (GPS) لكن تعذر جلب الوصف النصي.";
-            setStatus("تم تحديد الموقع، لكن سيتم تحديد العنوان لاحقًا.", "err");
-          } finally {
-            locBtn.disabled = false;
-            locBtn.textContent = "📍 تحديد موقعي الحالي";
-          }
-        },
-        (err) => {
-          setStatus("فشل تحديد الموقع: " + (err.message || "تعذر تحديد الموقع"), "err");
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        lat = Number(pos.coords.latitude.toFixed(6));
+        lon = Number(pos.coords.longitude.toFixed(6));
+        try {
+          const niceAddress = await reverseGeocode(lat, lon);
+          pickupInput.value = `📍 ${niceAddress}`;
+          locInfo.textContent = `تم تحديد موقعك: ${niceAddress}`;
+          setStatus("تم تحديد الموقع والوصف بنجاح.", "ok");
+        } catch (e) {
+          pickupInput.value = "📍 تم تحديد موقعك (GPS)";
+          locInfo.textContent = "تم تحديد الموقع (GPS) لكن تعذر جلب الوصف النصي.";
+          setStatus("تم تحديد الموقع، لكن سيتم تحديد العنوان لاحقًا.", "err");
+        } finally {
           locBtn.disabled = false;
           locBtn.textContent = "📍 تحديد موقعي الحالي";
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 12000,
-          maximumAge: 0
         }
-      );
+      }, (err) => {
+        setStatus("فشل تحديد الموقع: " + (err.message || "تعذر تحديد الموقع"), "err");
+        locBtn.disabled = false;
+        locBtn.textContent = "📍 تحديد موقعي الحالي";
+      }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
     });
 
     async function submitTrip() {
+      if (currentMode !== "client") return;
       if (sending) return;
       sending = true;
-
-      const clientId = getClientId();
+      const clientId = getUserId();
       const destination = destinationInput.value.trim();
       const pickupText = pickupInput.value.trim();
       const notes = notesInput.value.trim();
       const passengers = parseInt(passengersInput.value || "1", 10);
       const city = cityInput.value.trim() || "الطائف";
-
-      if (!clientId) {
-        setStatus("تعذر معرفة رقم العميل. افتح الصفحة من داخل تيليجرام.", "err");
-        sending = false;
-        return;
-      }
-
-      if (!lat || !lon) {
-        setStatus("حدد موقع الانطلاق أولًا.", "err");
-        sending = false;
-        return;
-      }
-
-      if (!destination) {
-        setStatus("اكتب الوجهة أو حددها من الخريطة أولًا.", "err");
-        sending = false;
-        return;
-      }
+      if (!clientId) { sending = false; return setStatus("تعذر معرفة رقم العميل.", "err"); }
+      if (!lat || !lon) { sending = false; return setStatus("حدد موقع الانطلاق أولًا.", "err"); }
+      if (!destination) { sending = false; return setStatus("اكتب الوجهة أو حددها من الخريطة أولًا.", "err"); }
 
       const payload = {
-        client_id: Number(clientId),
-        pickup_text: pickupText || `📍 ${city}`,
-        pickup_lat: lat,
-        pickup_lon: lon,
-        destination_text: destination,
-        destination_lat: destinationLat,
-        destination_lon: destinationLon,
-        passengers,
-        notes,
-        city
+        client_id: Number(clientId), pickup_text: pickupText || `📍 ${city}`, pickup_lat: lat, pickup_lon: lon,
+        destination_text: destination, destination_lat: destinationLat, destination_lon: destinationLon,
+        passengers, notes, city
       };
 
       try {
-        if (tg) {
-          tg.MainButton.setText("جاري الإرسال...");
-          tg.MainButton.disable();
-        }
-
-        const res = await fetch(`${API_URL}/trip`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
+        if (tg) { tg.MainButton.setText("جاري الإرسال..."); tg.MainButton.disable(); }
+        const result = await api(`/trip`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
         });
-
-        const result = await res.json();
-
         if (result.ok) {
           setStatus("تم إنشاء الرحلة بنجاح.", "ok");
           if (tg) tg.MainButton.hide();
@@ -630,27 +686,18 @@
         } else {
           setStatus(result.message || "تعذر إنشاء الرحلة.", "err");
           sending = false;
-          if (tg) {
-            tg.MainButton.setText("🚀 إرسال الطلب");
-            tg.MainButton.enable();
-          }
+          if (tg) { tg.MainButton.setText("🚀 إرسال الطلب"); tg.MainButton.enable(); }
         }
       } catch (e) {
         console.log("submitTrip error:", e);
         setStatus("تعذر الاتصال بالـ API.", "err");
         sending = false;
-        if (tg) {
-          tg.MainButton.setText("🚀 إرسال الطلب");
-          tg.MainButton.enable();
-        }
+        if (tg) { tg.MainButton.setText("🚀 إرسال الطلب"); tg.MainButton.enable(); }
       }
     }
 
-    loadMyTrips();
-
-    if (tg) {
-      tg.MainButton.onClick(submitTrip);
-    }
+    if (tg) tg.MainButton.onClick(submitTrip);
+    initApp();
   </script>
 </body>
 </html>
