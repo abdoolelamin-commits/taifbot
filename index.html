@@ -486,31 +486,57 @@
     }
 
     async function loadDriverActiveTrip(driverId) {
-      const data = await api(`/driver/${driverId}/active_trip`);
-      const trip = data.active_trip;
-      if (!trip) {
-        driverActiveTripBox.innerHTML = "لا توجد رحلة حالية.";
-        return;
-      }
-      const mapLink = trip.pickup_lat && trip.pickup_lon
-        ? `<br><a style="color:#86efac" target="_blank" href="https://www.google.com/maps?q=${trip.pickup_lat},${trip.pickup_lon}">📍 فتح موقع العميل</a>`
-        : "";
+  const data = await api(`/driver/${driverId}/active_trip`);
+  const trip = data.active_trip;
 
-      const startBtn = trip.status === "assigned" ? `<button class="btn" onclick="driverStartTrip(${trip.id})">🚗 بدء الرحلة</button>` : "";
-      const completeBtn = trip.status === "started" ? `<button class="btn" onclick="driverCompleteTrip(${trip.id})">✅ إنهاء الرحلة</button>` : "";
+  if (!trip) {
+    driverActiveTripBox.innerHTML = "لا توجد رحلة حالية.";
+    return;
+  }
 
-      driverActiveTripBox.innerHTML = `
-        <strong>طلب #${trip.id}</strong><br>
-        الحالة: ${trip.status}<br>
-        📍 الانطلاق: ${trip.pickup_text || "-"}<br>
-        🎯 الوجهة: ${trip.destination_text || "-"}<br>
-        👥 الركاب: ${trip.passengers || "-"}
-        ${mapLink}
-        ${startBtn}
-        ${completeBtn}
-      `;
+  let clientName = "-";
+  let clientUsername = null;
+
+  try {
+    const c = await api(`/client/${trip.client_id}`);
+
+    if (c.ok) {
+      clientName = c.client.name || "-";
+      clientUsername = c.client.username || null;
     }
+  } catch (e) {
+    console.log(e);
+  }
 
+  const contactLink = clientUsername
+    ? `<br><a style="color:#86efac" target="_blank" href="https://t.me/${clientUsername}">📞 تواصل مع العميل</a>`
+    : "";
+
+  const mapLink = trip.pickup_lat && trip.pickup_lon
+    ? `<br><a style="color:#86efac" target="_blank" href="https://www.google.com/maps?q=${trip.pickup_lat},${trip.pickup_lon}">📍 فتح موقع العميل</a>`
+    : "";
+
+  const startBtn = trip.status === "assigned"
+    ? `<button class="btn" onclick="driverStartTrip(${trip.id})">🚗 بدء الرحلة</button>`
+    : "";
+
+  const completeBtn = trip.status === "started"
+    ? `<button class="btn" onclick="driverCompleteTrip(${trip.id})">✅ إنهاء الرحلة</button>`
+    : "";
+
+  driverActiveTripBox.innerHTML = `
+    <strong>طلب #${trip.id}</strong><br>
+    الحالة: ${trip.status}<br>
+    👤 العميل: ${clientName}
+    ${contactLink}<br>
+    📍 الانطلاق: ${trip.pickup_text || "-"}<br>
+    🎯 الوجهة: ${trip.destination_text || "-"}<br>
+    👥 الركاب: ${trip.passengers || "-"}
+    ${mapLink}
+    ${startBtn}
+    ${completeBtn}
+  `;
+}
     async function driverStartTrip(tripId) {
       await api(`/trip/${tripId}/start`, { method: "POST" });
       loadDriverHome();
