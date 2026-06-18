@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🚕 طلب مشوار</title>
+  <title>🚕 يلا مشوار</title>
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <style>
     :root {
       --bg1: #0f172a;
@@ -104,6 +106,14 @@
       cursor: pointer;
     }
 
+    .btn-danger {
+      background: var(--danger);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.16);
+    }
+
     .btn:disabled {
       opacity: 0.7;
       cursor: not-allowed;
@@ -128,6 +138,15 @@
     .ok { color: #86efac; }
     .err { color: #fca5a5; }
 
+    .trip-line {
+      margin-top: 10px;
+      line-height: 1.8;
+      color: var(--hint);
+    }
+
+    .trip-line strong {
+      color: #fff;
+    }
 
     .map-modal {
       position: fixed;
@@ -184,10 +203,6 @@
       background: rgba(255,255,255,0.06);
     }
 
-    .btn-secondary {
-      background: rgba(255,255,255,0.16);
-    }
-
     .footer-note {
       margin-top: 14px;
       color: var(--hint);
@@ -196,46 +211,37 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
+
     <div id="activeTripCard" class="card" style="display:none;margin-bottom:16px;">
+      <h2 style="margin-top:0">🚕 رحلتك الحالية</h2>
 
-  <h2 style="margin-top:0">🚕 رحلتك الحالية</h2>
+      <div class="trip-line">
+        <strong>الحالة:</strong>
+        <span id="tripStatus">-</span>
+      </div>
 
-  <div style="margin-top:12px">
-    <strong>الحالة:</strong>
-    <span id="tripStatus"></span>
-  </div>
+      <div class="trip-line">
+        <strong>الوجهة:</strong>
+        <span id="tripDestination">-</span>
+      </div>
 
-  <div style="margin-top:10px">
-    <strong>الوجهة:</strong>
-    <span id="tripDestination"></span>
-  </div>
+      <div class="trip-line">
+        <strong>السائق:</strong>
+        <span id="driverName">-</span>
+      </div>
 
-  <div style="margin-top:10px">
-    <strong>السائق:</strong>
-    <span id="driverName"></span>
-  </div>
+      <div class="trip-line">
+        <strong>السيارة:</strong>
+        <span id="driverCar">-</span>
+      </div>
 
-  <div style="margin-top:10px">
-    <strong>السيارة:</strong>
-    <span id="driverCar"></span>
-  </div>
-
-<button
-id="cancelTripBtn"
-class="btn"
-style="background:#ef4444;margin-top:18px"
-
->
-
-```
-❌ إلغاء الرحلة
-```
-
-  </button>
-
-</div>
+      <button id="cancelTripBtn" class="btn btn-danger" type="button">
+        ❌ إلغاء الرحلة
+      </button>
+    </div>
 
     <div class="hero">
       <h1>🚕 طلب مشوار</h1>
@@ -270,7 +276,7 @@ style="background:#ef4444;margin-top:18px"
 
         <div>
           <label for="city">🏙️ المدينة</label>
-          <input id="city" value="  " />
+          <input id="city" value="الطائف" />
         </div>
       </div>
 
@@ -289,7 +295,9 @@ style="background:#ef4444;margin-top:18px"
     <div class="map-card">
       <div class="map-header">
         <div>🏁 اختر الوجهة من الخريطة</div>
-        <button id="closeMapBtn" class="btn btn-secondary" type="button" style="width:auto;margin:0;padding:9px 12px;">إغلاق</button>
+        <button id="closeMapBtn" class="btn btn-secondary" type="button" style="width:auto;margin:0;padding:9px 12px;">
+          إغلاق
+        </button>
       </div>
       <div class="map-help">حرّك الخريطة واضغط على مكان الوجهة، ثم اضغط "اعتماد الوجهة".</div>
       <div id="map"></div>
@@ -301,306 +309,348 @@ style="background:#ef4444;margin-top:18px"
   </div>
 
   <script>
-   <script>
-const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-const API_URL = "http://163.245.218.237:8001";
-
-if (tg) {
-  tg.ready();
-  tg.expand();
-  tg.MainButton.setText("🚀 إرسال الطلب");
-  tg.MainButton.show();
-  tg.MainButton.enable();
-}
-
-let lat = null;
-let lon = null;
-let destinationLat = null;
-let destinationLon = null;
-let map = null;
-let destinationMarker = null;
-let tempDestinationLat = null;
-let tempDestinationLon = null;
-let sending = false;
-
-const pickupInput = document.getElementById("pickup_text");
-const destinationInput = document.getElementById("destination");
-const passengersInput = document.getElementById("passengers");
-const notesInput = document.getElementById("notes");
-const cityInput = document.getElementById("city");
-const locBtn = document.getElementById("locBtn");
-const locInfo = document.getElementById("locInfo");
-const destMapBtn = document.getElementById("destMapBtn");
-const destInfo = document.getElementById("destInfo");
-const mapModal = document.getElementById("mapModal");
-const closeMapBtn = document.getElementById("closeMapBtn");
-const confirmDestBtn = document.getElementById("confirmDestBtn");
-const cancelDestBtn = document.getElementById("cancelDestBtn");
-const statusEl = document.getElementById("status");
-
-const activeTripCard = document.getElementById("activeTripCard");
-const requestCard = document.getElementById("requestCard");
-const tripStatus = document.getElementById("tripStatus");
-const tripDestination = document.getElementById("tripDestination");
-const driverName = document.getElementById("driverName");
-const driverCar = document.getElementById("driverCar");
-const cancelTripBtn = document.getElementById("cancelTripBtn");
-
-function setStatus(text, type = "") {
-  statusEl.className = "status " + type;
-  statusEl.textContent = text;
-}
-
-async function loadMyTrips() {
-  if (!tg || !tg.initDataUnsafe?.user) return;
-
-  const clientId = tg.initDataUnsafe.user.id;
-
-  try {
-    const res = await fetch(`${API_URL}/my_trips/${clientId}`);
-    const data = await res.json();
-
-    if (!data.active_trip) return;
-
-    const trip = data.active_trip;
-
-    activeTripCard.style.display = "block";
-    requestCard.style.display = "none";
-    document.querySelector(".hero").style.display = "none";
-
-    tripStatus.innerText = trip.status || "-";
-    tripDestination.innerText = trip.destination_text || "-";
-    driverName.innerText = trip.driver_name || "-";
-    driverCar.innerText = trip.driver_car || "-";
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    const API_URL = "http://163.245.218.237:8001";
 
     if (tg) {
-      tg.MainButton.hide();
-    }
-
-    cancelTripBtn.onclick = async () => {
-      cancelTripBtn.disabled = true;
-      cancelTripBtn.innerText = "جاري الإلغاء...";
-
-      await fetch(`${API_URL}/trip/${trip.id}/cancel`, {
-        method: "POST"
-      });
-
-      location.reload();
-    };
-
-  } catch (e) {
-    console.log("loadMyTrips error:", e);
-  }
-}
-
-async function reverseGeocode(lat, lon) {
-  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=ar&zoom=18&addressdetails=1&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
-
-  const res = await fetch(url, {
-    headers: { "Accept": "application/json" }
-  });
-
-  if (!res.ok) throw new Error("تعذر جلب وصف الموقع");
-
-  const data = await res.json();
-  const addr = data.address || {};
-
-  const suburb =
-    addr.suburb ||
-    addr.neighbourhood ||
-    addr.quarter ||
-    addr.city_district ||
-    "";
-
-  const road =
-    addr.road ||
-    addr.pedestrian ||
-    addr.residential ||
-    "";
-
-  const city =
-    addr.city ||
-    addr.town ||
-    addr.village ||
-    cityInput.value.trim() ||
-    "الطائف";
-
-  const parts = [suburb, road, city].filter(Boolean);
-  return parts.length ? parts.join("، ") : data.display_name || "موقع مرسل";
-}
-
-function openDestinationMap() {
-  const centerLat = lat || 21.2703;
-  const centerLon = lon || 40.4158;
-
-  mapModal.style.display = "flex";
-
-  setTimeout(() => {
-    if (!map) {
-      map = L.map("map").setView([centerLat, centerLon], 14);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "© OpenStreetMap"
-      }).addTo(map);
-
-      map.on("click", (e) => {
-        tempDestinationLat = Number(e.latlng.lat.toFixed(6));
-        tempDestinationLon = Number(e.latlng.lng.toFixed(6));
-
-        if (!destinationMarker) {
-          destinationMarker = L.marker([tempDestinationLat, tempDestinationLon]).addTo(map);
-        } else {
-          destinationMarker.setLatLng([tempDestinationLat, tempDestinationLon]);
-        }
-
-        destInfo.textContent = "تم اختيار نقطة الوجهة.";
-        setStatus("تم اختيار الوجهة من الخريطة. اضغط اعتماد الوجهة.", "ok");
-      });
-    } else {
-      map.setView([centerLat, centerLon], 14);
-    }
-
-    map.invalidateSize();
-  }, 250);
-}
-
-function closeDestinationMap() {
-  mapModal.style.display = "none";
-}
-
-destMapBtn.addEventListener("click", openDestinationMap);
-closeMapBtn.addEventListener("click", closeDestinationMap);
-cancelDestBtn.addEventListener("click", closeDestinationMap);
-
-confirmDestBtn.addEventListener("click", async () => {
-  if (!tempDestinationLat || !tempDestinationLon) {
-    setStatus("اختر الوجهة من الخريطة أولًا.", "err");
-    return;
-  }
-
-  destinationLat = tempDestinationLat;
-  destinationLon = tempDestinationLon;
-
-  try {
-    const niceAddress = await reverseGeocode(destinationLat, destinationLon);
-    destinationInput.value = `🏁 ${niceAddress}`;
-    destInfo.textContent = `تم تحديد الوجهة: ${niceAddress}`;
-    setStatus("تم اعتماد الوجهة من الخريطة.", "ok");
-  } catch (e) {
-    destinationInput.value = "🏁 وجهة محددة من الخريطة";
-    destInfo.textContent = `تم تحديد الوجهة بالإحداثيات: ${destinationLat}, ${destinationLon}`;
-    setStatus("تم اعتماد الوجهة، لكن تعذر جلب الوصف النصي.", "ok");
-  }
-
-  closeDestinationMap();
-});
-
-locBtn.addEventListener("click", () => {
-  if (!navigator.geolocation) {
-    setStatus("هذا الجهاز لا يدعم تحديد الموقع.", "err");
-    return;
-  }
-
-  setStatus("جاري تحديد الموقع...", "");
-  locBtn.disabled = true;
-  locBtn.textContent = "⏳ جاري التحديد...";
-
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      lat = Number(pos.coords.latitude.toFixed(6));
-      lon = Number(pos.coords.longitude.toFixed(6));
-
-      try {
-        const niceAddress = await reverseGeocode(lat, lon);
-        pickupInput.value = `📍 ${niceAddress}`;
-        locInfo.textContent = `تم تحديد موقعك: ${niceAddress}`;
-        setStatus("تم تحديد الموقع والوصف بنجاح.", "ok");
-      } catch (e) {
-        pickupInput.value = "📍 تم تحديد موقعك (GPS)";
-        locInfo.textContent = "تم تحديد الموقع (GPS) لكن تعذر جلب الوصف النصي.";
-        setStatus("تم تحديد الموقع، لكن سيتم تحديد العنوان لاحقًا.", "err");
-      } finally {
-        locBtn.disabled = false;
-        locBtn.textContent = "📍 تحديد موقعي الحالي";
-      }
-    },
-    (err) => {
-      setStatus("فشل تحديد الموقع: " + (err.message || "تعذر تحديد الموقع"), "err");
-      locBtn.disabled = false;
-      locBtn.textContent = "📍 تحديد موقعي الحالي";
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 12000,
-      maximumAge: 0
-    }
-  );
-});
-
-function submitTrip() {
-  if (sending) return;
-  sending = true;
-
-  const destination = destinationInput.value.trim();
-  const pickupText = pickupInput.value.trim();
-  const notes = notesInput.value.trim();
-  const passengers = parseInt(passengersInput.value || "1", 10);
-  const city = cityInput.value.trim() || "الطائف";
-
-  if (!lat || !lon) {
-    setStatus("حدد موقع الانطلاق أولًا.", "err");
-    sending = false;
-    return;
-  }
-
-  if (!destination) {
-    setStatus("اكتب الوجهة أو حددها من الخريطة أولًا.", "err");
-    sending = false;
-    return;
-  }
-
-  const payload = {
-    action: "create_trip",
-    pickup_text: pickupText || `📍 ${city}`,
-    pickup_lat: lat,
-    pickup_lon: lon,
-    destination,
-    destination_text: destination,
-    destination_lat: destinationLat,
-    destination_lon: destinationLon,
-    passengers,
-    notes,
-    city
-  };
-
-  try {
-    if (tg) {
-      tg.MainButton.setText("جاري الإرسال...");
-      tg.MainButton.disable();
-      tg.sendData(JSON.stringify(payload));
-      tg.close();
-    } else {
-      setStatus("الصفحة تعمل خارج تيليجرام، لذلك لن يتم إرسال الطلب.", "err");
-      console.log(payload);
-      sending = false;
-    }
-  } catch (e) {
-    setStatus("تعذر إرسال الطلب إلى البوت.", "err");
-    sending = false;
-    if (tg) {
+      tg.ready();
+      tg.expand();
       tg.MainButton.setText("🚀 إرسال الطلب");
+      tg.MainButton.show();
       tg.MainButton.enable();
     }
-  }
-}
 
-loadMyTrips();
+    let lat = null;
+    let lon = null;
+    let destinationLat = null;
+    let destinationLon = null;
+    let map = null;
+    let destinationMarker = null;
+    let tempDestinationLat = null;
+    let tempDestinationLon = null;
+    let sending = false;
 
-if (tg) {
-  tg.MainButton.onClick(submitTrip);
-}
-</script>
+    const pickupInput = document.getElementById("pickup_text");
+    const destinationInput = document.getElementById("destination");
+    const passengersInput = document.getElementById("passengers");
+    const notesInput = document.getElementById("notes");
+    const cityInput = document.getElementById("city");
+    const locBtn = document.getElementById("locBtn");
+    const locInfo = document.getElementById("locInfo");
+    const destMapBtn = document.getElementById("destMapBtn");
+    const destInfo = document.getElementById("destInfo");
+    const mapModal = document.getElementById("mapModal");
+    const closeMapBtn = document.getElementById("closeMapBtn");
+    const confirmDestBtn = document.getElementById("confirmDestBtn");
+    const cancelDestBtn = document.getElementById("cancelDestBtn");
+    const statusEl = document.getElementById("status");
+
+    const activeTripCard = document.getElementById("activeTripCard");
+    const requestCard = document.getElementById("requestCard");
+    const tripStatus = document.getElementById("tripStatus");
+    const tripDestination = document.getElementById("tripDestination");
+    const driverName = document.getElementById("driverName");
+    const driverCar = document.getElementById("driverCar");
+    const cancelTripBtn = document.getElementById("cancelTripBtn");
+
+    function getClientId() {
+      const params = new URLSearchParams(window.location.search);
+      return (
+        tg?.initDataUnsafe?.user?.id ||
+        params.get("client_id") ||
+        null
+      );
+    }
+
+    function setStatus(text, type = "") {
+      statusEl.className = "status " + type;
+      statusEl.textContent = text;
+    }
+
+    async function loadMyTrips() {
+      const clientId = getClientId();
+      if (!clientId) return;
+
+      try {
+        const res = await fetch(`${API_URL}/my_trips/${clientId}`);
+        const data = await res.json();
+
+        if (!data.active_trip) return;
+
+        const trip = data.active_trip;
+
+        activeTripCard.style.display = "block";
+        requestCard.style.display = "none";
+        document.querySelector(".hero").style.display = "none";
+
+        tripStatus.innerText = trip.status || "-";
+        tripDestination.innerText = trip.destination_text || "-";
+        driverName.innerText = trip.driver_name || "-";
+        driverCar.innerText = trip.driver_car || "-";
+
+        if (tg) tg.MainButton.hide();
+
+        cancelTripBtn.onclick = async () => {
+          cancelTripBtn.disabled = true;
+          cancelTripBtn.innerText = "جاري الإلغاء...";
+
+          await fetch(`${API_URL}/trip/${trip.id}/cancel`, {
+            method: "POST"
+          });
+
+          location.reload();
+        };
+      } catch (e) {
+        console.log("loadMyTrips error:", e);
+      }
+    }
+
+    async function reverseGeocode(lat, lon) {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=ar&zoom=18&addressdetails=1&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+
+      const res = await fetch(url, {
+        headers: { "Accept": "application/json" }
+      });
+
+      if (!res.ok) {
+        throw new Error("تعذر جلب وصف الموقع");
+      }
+
+      const data = await res.json();
+      const addr = data.address || {};
+
+      const suburb =
+        addr.suburb ||
+        addr.neighbourhood ||
+        addr.quarter ||
+        addr.city_district ||
+        "";
+
+      const road =
+        addr.road ||
+        addr.pedestrian ||
+        addr.residential ||
+        "";
+
+      const city =
+        addr.city ||
+        addr.town ||
+        addr.village ||
+        cityInput.value.trim() ||
+        "الطائف";
+
+      const parts = [suburb, road, city].filter(Boolean);
+      return parts.length ? parts.join("، ") : data.display_name || "موقع مرسل";
+    }
+
+    function openDestinationMap() {
+      const centerLat = lat || 21.2703;
+      const centerLon = lon || 40.4158;
+
+      mapModal.style.display = "flex";
+
+      setTimeout(() => {
+        if (!map) {
+          map = L.map("map").setView([centerLat, centerLon], 14);
+
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "© OpenStreetMap"
+          }).addTo(map);
+
+          map.on("click", (e) => {
+            tempDestinationLat = Number(e.latlng.lat.toFixed(6));
+            tempDestinationLon = Number(e.latlng.lng.toFixed(6));
+
+            if (!destinationMarker) {
+              destinationMarker = L.marker([tempDestinationLat, tempDestinationLon]).addTo(map);
+            } else {
+              destinationMarker.setLatLng([tempDestinationLat, tempDestinationLon]);
+            }
+
+            destInfo.textContent = "تم اختيار نقطة الوجهة.";
+            setStatus("تم اختيار الوجهة من الخريطة. اضغط اعتماد الوجهة.", "ok");
+          });
+        } else {
+          map.setView([centerLat, centerLon], 14);
+        }
+
+        map.invalidateSize();
+
+        if (destinationLat && destinationLon) {
+          tempDestinationLat = destinationLat;
+          tempDestinationLon = destinationLon;
+
+          if (!destinationMarker) {
+            destinationMarker = L.marker([destinationLat, destinationLon]).addTo(map);
+          } else {
+            destinationMarker.setLatLng([destinationLat, destinationLon]);
+          }
+
+          map.setView([destinationLat, destinationLon], 15);
+        }
+      }, 250);
+    }
+
+    function closeDestinationMap() {
+      mapModal.style.display = "none";
+    }
+
+    destMapBtn.addEventListener("click", openDestinationMap);
+    closeMapBtn.addEventListener("click", closeDestinationMap);
+    cancelDestBtn.addEventListener("click", closeDestinationMap);
+
+    confirmDestBtn.addEventListener("click", async () => {
+      if (!tempDestinationLat || !tempDestinationLon) {
+        setStatus("اختر الوجهة من الخريطة أولًا.", "err");
+        return;
+      }
+
+      destinationLat = tempDestinationLat;
+      destinationLon = tempDestinationLon;
+
+      try {
+        const niceAddress = await reverseGeocode(destinationLat, destinationLon);
+        destinationInput.value = `🏁 ${niceAddress}`;
+        destInfo.textContent = `تم تحديد الوجهة: ${niceAddress}`;
+        setStatus("تم اعتماد الوجهة من الخريطة.", "ok");
+      } catch (e) {
+        destinationInput.value = "🏁 وجهة محددة من الخريطة";
+        destInfo.textContent = `تم تحديد الوجهة بالإحداثيات: ${destinationLat}, ${destinationLon}`;
+        setStatus("تم اعتماد الوجهة، لكن تعذر جلب الوصف النصي.", "ok");
+      }
+
+      closeDestinationMap();
+    });
+
+    locBtn.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        setStatus("هذا الجهاز لا يدعم تحديد الموقع.", "err");
+        return;
+      }
+
+      setStatus("جاري تحديد الموقع...", "");
+      locBtn.disabled = true;
+      locBtn.textContent = "⏳ جاري التحديد...";
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          lat = Number(pos.coords.latitude.toFixed(6));
+          lon = Number(pos.coords.longitude.toFixed(6));
+
+          try {
+            const niceAddress = await reverseGeocode(lat, lon);
+            pickupInput.value = `📍 ${niceAddress}`;
+            locInfo.textContent = `تم تحديد موقعك: ${niceAddress}`;
+            setStatus("تم تحديد الموقع والوصف بنجاح.", "ok");
+          } catch (e) {
+            pickupInput.value = "📍 تم تحديد موقعك (GPS)";
+            locInfo.textContent = "تم تحديد الموقع (GPS) لكن تعذر جلب الوصف النصي.";
+            setStatus("تم تحديد الموقع، لكن سيتم تحديد العنوان لاحقًا.", "err");
+          } finally {
+            locBtn.disabled = false;
+            locBtn.textContent = "📍 تحديد موقعي الحالي";
+          }
+        },
+        (err) => {
+          setStatus("فشل تحديد الموقع: " + (err.message || "تعذر تحديد الموقع"), "err");
+          locBtn.disabled = false;
+          locBtn.textContent = "📍 تحديد موقعي الحالي";
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 0
+        }
+      );
+    });
+
+    async function submitTrip() {
+      if (sending) return;
+      sending = true;
+
+      const clientId = getClientId();
+      const destination = destinationInput.value.trim();
+      const pickupText = pickupInput.value.trim();
+      const notes = notesInput.value.trim();
+      const passengers = parseInt(passengersInput.value || "1", 10);
+      const city = cityInput.value.trim() || "الطائف";
+
+      if (!clientId) {
+        setStatus("تعذر معرفة رقم العميل. افتح الصفحة من داخل تيليجرام.", "err");
+        sending = false;
+        return;
+      }
+
+      if (!lat || !lon) {
+        setStatus("حدد موقع الانطلاق أولًا.", "err");
+        sending = false;
+        return;
+      }
+
+      if (!destination) {
+        setStatus("اكتب الوجهة أو حددها من الخريطة أولًا.", "err");
+        sending = false;
+        return;
+      }
+
+      const payload = {
+        client_id: Number(clientId),
+        pickup_text: pickupText || `📍 ${city}`,
+        pickup_lat: lat,
+        pickup_lon: lon,
+        destination_text: destination,
+        destination_lat: destinationLat,
+        destination_lon: destinationLon,
+        passengers,
+        notes,
+        city
+      };
+
+      try {
+        if (tg) {
+          tg.MainButton.setText("جاري الإرسال...");
+          tg.MainButton.disable();
+        }
+
+        const res = await fetch(`${API_URL}/trip`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+
+        if (result.ok) {
+          setStatus("تم إنشاء الرحلة بنجاح.", "ok");
+          if (tg) tg.MainButton.hide();
+          location.reload();
+        } else {
+          setStatus(result.message || "تعذر إنشاء الرحلة.", "err");
+          sending = false;
+          if (tg) {
+            tg.MainButton.setText("🚀 إرسال الطلب");
+            tg.MainButton.enable();
+          }
+        }
+      } catch (e) {
+        console.log("submitTrip error:", e);
+        setStatus("تعذر الاتصال بالـ API.", "err");
+        sending = false;
+        if (tg) {
+          tg.MainButton.setText("🚀 إرسال الطلب");
+          tg.MainButton.enable();
+        }
+      }
+    }
+
+    loadMyTrips();
+
+    if (tg) {
+      tg.MainButton.onClick(submitTrip);
+    }
   </script>
 </body>
 </html>
