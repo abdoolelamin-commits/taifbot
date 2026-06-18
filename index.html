@@ -180,6 +180,9 @@
 
       <div id="clientRequestCard" class="card">
         <h2 style="margin-top:0">🚕 طلب مشوار</h2>
+        <button id="switchModeFromClientRequest" class="btn btn-secondary" type="button" style="display:none">
+  🔄 تبديل الحساب
+</button>
         <p class="small">أدخل بيانات الرحلة وسنرسل طلبك مباشرة إلى السائقين المتاحين.</p>
 
         <label for="pickup_text">📍 نقطة الانطلاق</label>
@@ -337,9 +340,12 @@
     }
 
     function showSwitchButtons(show) {
-      $("switchModeFromClient").style.display = show ? "block" : "none";
-      $("switchModeFromDriver").style.display = show ? "block" : "none";
-    }
+  $("switchModeFromClient").style.display = show ? "block" : "none";
+  $("switchModeFromDriver").style.display = show ? "block" : "none";
+
+  const btn = $("switchModeFromClientRequest");
+  if (btn) btn.style.display = show ? "block" : "none";
+}
 
     async function api(path, options = {}) {
       const res = await fetch(`${API_URL}${path}`, options);
