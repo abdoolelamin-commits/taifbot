@@ -307,9 +307,16 @@
     const cancelDestBtn = $("cancelDestBtn");
 
     function getUserId() {
-      const params = new URLSearchParams(window.location.search);
-      return tg?.initDataUnsafe?.user?.id || params.get("user_id") || params.get("client_id") || null;
-    }
+    const params = new URLSearchParams(window.location.search);
+
+  return (
+    tg?.initDataUnsafe?.user?.id ||
+    params.get("user_id") ||
+    params.get("client_id") ||
+    params.get("driver_id") ||
+    null
+  );
+}
 
     function setStatus(text, type = "") {
       statusEl.className = "status " + type;
