@@ -477,6 +477,12 @@ const savedMode = urlMode || localStorage.getItem("ym_mode");
         الحالة: ${d.available ? "🟢 متاح" : "🔴 غير متاح"}<br>
         الاشتراك: ${sub.active ? "✅ نشط" : "❌ منتهي"} - ${sub.days_left || 0} يوم
       `;
+      driverProfileBox.innerHTML += `
+<br><br>
+<button class="btn" onclick="renewSubscription()">
+💳 تجديد الاشتراك
+</button>
+`;
       driverToggleAvailableBtn.innerText = d.available ? "🔴 اجعلني غير متاح" : "🟢 اجعلني متاح";
       driverToggleAvailableBtn.onclick = async () => {
         await api(`/driver/${driverId}/availability`, {
@@ -491,7 +497,38 @@ const savedMode = urlMode || localStorage.getItem("ym_mode");
       await loadDriverActiveTrip(driverId);
       await loadDriverRequests(driverId);
     }
+async function renewSubscription() {
 
+  const driverId = getUserId();
+
+  const ok = confirm(
+      "هل تريد تجديد الاشتراك لمدة شهر؟"
+  );
+
+  if (!ok) return;
+
+  const res = await api(
+      `/driver/${driverId}/renew_subscription`,
+      {
+        method:"POST"
+      }
+  );
+
+  if(res.ok){
+
+      alert(
+        `✅ تم التجديد\n\nينتهي في:\n${new Date(res.subscription_end_at*1000).toLocaleDateString()}`
+      );
+
+      loadDriverHome();
+
+  }else{
+
+      alert("فشل تجديد الاشتراك");
+
+  }
+
+}
     async function loadDriverActiveTrip(driverId) {
   const data = await api(`/driver/${driverId}/active_trip`);
   const trip = data.active_trip;
