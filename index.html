@@ -354,7 +354,9 @@
       }
 
       meData = await api(`/me/${userId}`);
-      const savedMode = localStorage.getItem("ym_mode");
+      const params = new URLSearchParams(window.location.search);
+const urlMode = params.get("mode");
+const savedMode = urlMode || localStorage.getItem("ym_mode");
       const both = meData.is_client && meData.is_driver;
       showSwitchButtons(both);
 
