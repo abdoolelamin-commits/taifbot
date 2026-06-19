@@ -369,6 +369,8 @@ $("switchModeFromClientRequest").onclick = switchAccount;
 
     async function initApp() {
   const userId = getUserId();
+      alert("USER ID = " + userId);
+alert("MODE = " + new URLSearchParams(window.location.search).get("mode"));
 
   if (!userId) {
     heroText.textContent = "افتح الصفحة من داخل تيليجرام أو أضف ?user_id=... للتجربة.";
