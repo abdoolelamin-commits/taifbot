@@ -373,30 +373,44 @@ $("switchModeFromClientRequest").onclick = switchAccount;
     }
 
     async function initApp() {
-      const userId = getUserId();
-      if (!userId) {
-        heroText.textContent = "افتح الصفحة من داخل تيليجرام أو أضف ?user_id=... للتجربة.";
-        return;
-      }
+  const userId = getUserId();
 
-      meData = await api(`/me/${userId}`);
-      const params = new URLSearchParams(window.location.search);
-const urlMode = params.get("mode");
-const savedMode = urlMode || localStorage.getItem("ym_mode");
-      const both = meData.is_client && meData.is_driver;
-      showSwitchButtons(both);
+  if (!userId) {
+    heroText.textContent = "افتح الصفحة من داخل تيليجرام أو أضف ?user_id=... للتجربة.";
+    return;
+  }
 
-      if (both && !savedMode) {
-        showOnly(modeSection);
-        if (tg) tg.MainButton.hide();
-        return;
-      }
+  meData = await api(`/me/${userId}`);
 
-      if (both && savedMode === "driver") return openDriverMode();
-      if (both && savedMode === "client") return openClientMode();
-      if (meData.is_driver && !meData.is_client) return openDriverMode();
-      return openClientMode();
-    }
+  const params = new URLSearchParams(window.location.search);
+  const urlMode = params.get("mode");
+
+  if (urlMode === "driver") {
+    localStorage.setItem("ym_mode", "driver");
+  }
+
+  if (urlMode === "client") {
+    localStorage.setItem("ym_mode", "client");
+  }
+
+  const savedMode = localStorage.getItem("ym_mode");
+  const both = meData.is_client && meData.is_driver;
+
+  showSwitchButtons(both);
+
+  if (both && !savedMode) {
+    showOnly(modeSection);
+    if (tg) tg.MainButton.hide();
+    return;
+  }
+
+  if (both && savedMode === "driver") return openDriverMode();
+  if (both && savedMode === "client") return openClientMode();
+
+  if (meData.is_driver && !meData.is_client) return openDriverMode();
+
+  return openClientMode();
+}
 
     function openClientMode() {
       currentMode = "client";
