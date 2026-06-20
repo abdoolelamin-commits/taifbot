@@ -168,11 +168,13 @@
     <div id="clientSection" class="section">
       <div id="clientActiveTripCard" class="card" style="display:none;">
         <h2 style="margin-top:0">🚕 رحلتك الحالية</h2>
+        
         <div class="trip-line"><strong>الحالة:</strong> <span id="clientTripStatus">-</span></div>
         <div class="trip-line"><strong>الوجهة:</strong> <span id="clientTripDestination">-</span></div>
         <div class="trip-line"><strong>السائق:</strong> <span id="clientDriverName">-</span></div>
         <div class="trip-line"><strong>السيارة:</strong> <span id="clientDriverCar">-</span></div>
         <div id="clientMapHint" class="info-box" style="display:none"></div>
+        <div id="clientDriverMap" style="height:260px; border-radius:16px; overflow:hidden; margin-top:12px; display:none;"></div>
         <div id="clientOffersBox" class="info-box" style="display:none"></div>
         <button id="clientCancelTripBtn" class="btn btn-danger" type="button">❌ إلغاء الرحلة</button>
         <button id="switchModeFromClient" class="btn btn-secondary" type="button" style="display:none">🔄 تبديل الحساب</button>
@@ -269,6 +271,8 @@
     let lat = null, lon = null;
     let destinationLat = null, destinationLon = null;
     let map = null, destinationMarker = null, tempDestinationLat = null, tempDestinationLon = null;
+    let clientDriverMap = null;
+    let clientDriverMarker = null;
     let sending = false;
     let driverEditingOffer = false;
 
@@ -497,6 +501,34 @@ $("switchModeFromClientRequest").onclick = () => {
 
   if (tg) tg.MainButton.hide();
 };
+function showClientDriverMap(driverLat, driverLon) {
+  const latNum = Number(driverLat);
+  const lonNum = Number(driverLon);
+
+  if (!latNum || !lonNum) return;
+
+  const mapBox = $("clientDriverMap");
+  mapBox.style.display = "block";
+
+  if (!clientDriverMap) {
+    clientDriverMap = L.map("clientDriverMap").setView([latNum, lonNum], 15);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "© OpenStreetMap"
+    }).addTo(clientDriverMap);
+
+    clientDriverMarker = L.marker([latNum, lonNum]).addTo(clientDriverMap)
+      .bindPopup("🚗 السائق هنا")
+      .openPopup();
+
+    setTimeout(() => clientDriverMap.invalidateSize(), 250);
+
+  } else {
+    clientDriverMarker.setLatLng([latNum, lonNum]);
+    clientDriverMap.setView([latNum, lonNum], 15);
+  }
+}
     async function loadClientHome() {
       const userId = getUserId();
       const data = await api(`/my_trips/${userId}`);
@@ -516,9 +548,16 @@ $("switchModeFromClientRequest").onclick = () => {
       clientDriverCar.innerText = trip.driver_car || "-";
 
       if (trip.driver_lat && trip.driver_lon) {
-        clientMapHint.style.display = "block";
-        clientMapHint.innerHTML = `📍 موقع السائق: ${trip.driver_lat}, ${trip.driver_lon}<br><a style="color:#86efac" target="_blank" href="https://www.google.com/maps?q=${trip.driver_lat},${trip.driver_lon}">فتح موقع السائق</a>`;
-      }
+  clientMapHint.style.display = "block";
+  clientMapHint.innerHTML = `📍 يتم تحديث موقع السائق تلقائيًا.`;
+
+  showClientDriverMap(trip.driver_lat, trip.driver_lon);
+} else {
+  clientMapHint.style.display = "none";
+
+  const mapBox = $("clientDriverMap");
+  if (mapBox) mapBox.style.display = "none";
+}
 
       if (trip.status === "open" || trip.status === "bidding") {
         await loadClientOffers(trip.id);
@@ -560,7 +599,76 @@ $("switchModeFromClientRequest").onclick = () => {
       location.reload();
     }
     window.acceptOffer = acceptOffer;
+let driverTrackingTimer = null;
 
+function startDriverTracking() {
+
+  const driverId = getUserId();
+
+  if (!driverId) return;
+
+  if (driverTrackingTimer)
+      clearInterval(driverTrackingTimer);
+
+  driverTrackingTimer = setInterval(() => {
+
+    navigator.geolocation.getCurrentPosition(
+
+      async (pos) => {
+
+        const lat = Number(
+          pos.coords.latitude.toFixed(6)
+        );
+
+        const lon = Number(
+          pos.coords.longitude.toFixed(6)
+        );
+
+        try {
+
+          await api(
+            `/driver/${driverId}/location`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type": "application/json"
+              },
+
+              body: JSON.stringify({
+                lat: lat,
+                lon: lon,
+                tracking_state: "online"
+              })
+            }
+          );
+
+          console.log("Driver location updated");
+
+        } catch(e) {
+
+          console.log(e);
+
+        }
+
+      },
+
+      (err) => {
+
+        console.log(err);
+
+      },
+
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+
+    );
+
+  }, 15000); // كل 15 ثانية
+}
     async function loadDriverHome() {
       const driverId = getUserId();
       const profile = await api(`/driver/${driverId}/profile`);
@@ -633,7 +741,7 @@ async function renewSubscription() {
     driverActiveTripBox.innerHTML = "لا توجد رحلة حالية.";
     return;
   }
-
+startDriverTracking();
   let clientName = "-";
   let clientUsername = null;
 
