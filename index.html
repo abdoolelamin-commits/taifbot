@@ -818,7 +818,13 @@ async function renewSubscription() {
     async function loadDriverActiveTrip(driverId) {
   const data = await api(`/driver/${driverId}/active_trip`);
   const trip = data.active_trip;
-
+  const destMapLink =
+  trip.destination_lat && trip.destination_lon
+    ? `<br><a style="color:#86efac" target="_blank"
+       href="https://www.google.com/maps?q=${trip.destination_lat},${trip.destination_lon}">
+       🏁 فتح موقع الوجهة
+       </a>`
+    : "";
   if (!trip) {
     driverActiveTripBox.innerHTML = "لا توجد رحلة حالية.";
     return;
@@ -863,6 +869,7 @@ startDriverTracking();
     🎯 الوجهة: ${trip.destination_text || "-"}<br>
     👥 الركاب: ${trip.passengers || "-"}
     ${mapLink}
+    ${destMapLink}
     ${startBtn}
     ${completeBtn}
   `;
