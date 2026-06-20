@@ -386,8 +386,7 @@ $("switchModeFromClientRequest").onclick = switchAccount;
 
     async function initApp() {
   const userId = getUserId();
-      alert("USER ID = " + userId);
-alert("MODE = " + new URLSearchParams(window.location.search).get("mode"));
+      
 
   if (!userId) {
     heroText.textContent = "افتح الصفحة من داخل تيليجرام أو أضف ?user_id=... للتجربة.";
@@ -427,32 +426,28 @@ alert("MODE = " + new URLSearchParams(window.location.search).get("mode"));
 }
 
     function openClientMode() {
-      currentMode = "client";
-      localStorage.setItem("ym_mode", "client");
-      mainHero.querySelector("h1").textContent = "🚕 يلا-مشوار";
-      heroText.textContent = "اطلب مشوارك وتابع السائق من نفس الشاشة.";
-      showOnly(clientSection);
+  currentMode = "client";
+  localStorage.setItem("ym_mode", "client");
 
+  mainHero.querySelector("h1").textContent = "🚕 يلا-مشوار";
+  heroText.textContent = "اطلب مشوارك وتابع السائق من نفس الشاشة.";
+
+  showOnly(clientSection);
+
+  if (tg) {
+    tg.MainButton.setText("🚀 إرسال الطلب");
+    tg.MainButton.show();
+    tg.MainButton.enable();
+  }
+
+  loadClientHome().then(() => {
     setTimeout(() => {
       if (clientFullMap) {
         clientFullMap.invalidateSize();
       }
-    }, 400);
-      
-      iif (tg) {
-  tg.MainButton.setText("🚀 إرسال الطلب");
-  tg.MainButton.show();
-  tg.MainButton.enable();
+    }, 500);
+  });
 }
-
-loadClientHome().then(() => {
-  setTimeout(() => {
-    if (clientFullMap) {
-      clientFullMap.invalidateSize();
-    }
-  }, 500);
-});
-
     function openDriverMode() {
       currentMode = "driver";
       localStorage.setItem("ym_mode", "driver");
