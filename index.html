@@ -142,15 +142,7 @@
       color: #fff;
       font-weight: 700;
     }
-  #clientFullMap {
-  height: 55vh;
-  min-height: 340px;
-  border-radius: 22px;
-  overflow: hidden;
-  margin-bottom: 14px;
-  direction: ltr;
-  border: 1px solid var(--border);
-}
+  
     .map-help { padding: 0 14px 10px; color: var(--hint); font-size: 13px; line-height: 1.7; }
     #map { flex: 1; min-height: 360px; direction: ltr; }
     .map-actions { padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(255,255,255,0.06); }
@@ -174,7 +166,6 @@
     </div>
 
     <div id="clientSection" class="section">
-      <div id="clientFullMap"></div>
       <div id="clientActiveTripCard" class="card" style="display:none;">
         <h2 style="margin-top:0">🚕 رحلتك الحالية</h2>
         
@@ -183,7 +174,6 @@
         <div class="trip-line"><strong>السائق:</strong> <span id="clientDriverName">-</span></div>
         <div class="trip-line"><strong>السيارة:</strong> <span id="clientDriverCar">-</span></div>
         <div id="clientMapHint" class="info-box" style="display:none"></div>
-        <div id="clientDriverMap" style="height:260px; border-radius:16px; overflow:hidden; margin-top:12px; display:none;"></div>
         <div id="clientOffersBox" class="info-box" style="display:none"></div>
         <button id="clientCancelTripBtn" class="btn btn-danger" type="button">❌ إلغاء الرحلة</button>
         <button id="switchModeFromClient" class="btn btn-secondary" type="button" style="display:none">🔄 تبديل الحساب</button>
@@ -280,13 +270,8 @@
     let lat = null, lon = null;
     let destinationLat = null, destinationLon = null;
     let map = null, destinationMarker = null, tempDestinationLat = null, tempDestinationLon = null;
-    let clientDriverMap = null;
-    let clientDriverMarker = null;
     let sending = false;
     let driverEditingOffer = false;
-    let clientFullMap = null;
-    let clientPickupMarker = null;
-    let clientDestinationMarker = null;
 
     const $ = (id) => document.getElementById(id);
     const mainHero = $("mainHero");
@@ -440,14 +425,7 @@ $("switchModeFromClientRequest").onclick = switchAccount;
     tg.MainButton.enable();
   }
 
-  loadClientHome().then(() => {
-    setTimeout(() => {
-      if (clientFullMap) {
-        clientFullMap.invalidateSize();
-      }
-    }, 500);
-  });
-}
+ loadClientHome();
     function openDriverMode() {
       currentMode = "driver";
       localStorage.setItem("ym_mode", "driver");
@@ -521,107 +499,19 @@ $("switchModeFromClientRequest").onclick = () => {
 
   if (tg) tg.MainButton.hide();
 };
-function showClientDriverMap(driverLat, driverLon) {
-  const latNum = Number(driverLat);
-  const lonNum = Number(driverLon);
 
-  if (!latNum || !lonNum) return;
-
-  const mapBox = $("clientDriverMap");
-  mapBox.style.display = "block";
-
-  if (!clientDriverMap) {
-    clientDriverMap = L.map("clientDriverMap").setView([latNum, lonNum], 15);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "© OpenStreetMap"
-    }).addTo(clientDriverMap);
-
-    clientDriverMarker = L.marker([latNum, lonNum]).addTo(clientDriverMap)
-      .bindPopup("🚗 السائق هنا")
-      .openPopup();
-
-    setTimeout(() => clientDriverMap.invalidateSize(), 250);
-
-  } else {
-    clientDriverMarker.setLatLng([latNum, lonNum]);
-    clientDriverMap.setView([latNum, lonNum], 15);
-  }
-}
-    function updateClientMap(trip) {
-  const mapBox = $("clientFullMap");
-  if (!mapBox) return;
-
-  const pickupLat = Number(trip.pickup_lat);
-  const pickupLon = Number(trip.pickup_lon);
-  const destLat = Number(trip.destination_lat);
-  const destLon = Number(trip.destination_lon);
-
-  if (!pickupLat || !pickupLon) {
-    mapBox.style.display = "none";
-    return;
-  }
-
-  mapBox.style.display = "block";
-
-  if (!clientFullMap) {
-    clientFullMap = L.map("clientFullMap").setView([pickupLat, pickupLon], 14);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "© OpenStreetMap"
-    }).addTo(clientFullMap);
-  }
-
-  if (!clientPickupMarker) {
-    clientPickupMarker = L.marker([pickupLat, pickupLon])
-      .addTo(clientFullMap)
-      .bindPopup("📍 موقعك");
-  } else {
-    clientPickupMarker.setLatLng([pickupLat, pickupLon]);
-  }
-
-  if (destLat && destLon) {
-    if (!clientDestinationMarker) {
-      clientDestinationMarker = L.marker([destLat, destLon])
-        .addTo(clientFullMap)
-        .bindPopup("🏁 الوجهة");
-    } else {
-      clientDestinationMarker.setLatLng([destLat, destLon]);
-    }
-
-    const bounds = L.latLngBounds([
-      [pickupLat, pickupLon],
-      [destLat, destLon]
-    ]);
-
-    clientFullMap.fitBounds(bounds, { padding: [40, 40] });
-  } else {
-    clientFullMap.setView([pickupLat, pickupLon], 14);
-  }
-
-  setTimeout(() => {
-    clientFullMap.invalidateSize();
-  }, 400);
-}
+   
     async function loadClientHome() {
       const userId = getUserId();
       const data = await api(`/my_trips/${userId}`);
 
      if (!data.active_trip) {
-  const mapBox = $("clientFullMap");
-  if (mapBox) mapBox.style.display = "none";
-
-  clientActiveTripCard.style.display = "none";
+    clientActiveTripCard.style.display = "none";
   clientRequestCard.style.display = "block";
   return;
 }
 
       const trip = data.active_trip;
-      const mapBox = $("clientFullMap");
-      if (mapBox) mapBox.style.display = "block";
-      updateClientMap(trip);
       clientActiveTripCard.style.display = "block";
       clientRequestCard.style.display = "none";
       clientTripStatus.innerText = trip.status || "-";
@@ -631,16 +521,16 @@ function showClientDriverMap(driverLat, driverLon) {
 
       if (trip.driver_lat && trip.driver_lon) {
   clientMapHint.style.display = "block";
-  clientMapHint.innerHTML = `📍 يتم تحديث موقع السائق تلقائيًا.`;
-
-  showClientDriverMap(trip.driver_lat, trip.driver_lon);
+  clientMapHint.innerHTML = `
+    📍 موقع السائق الحالي:<br>
+    <a style="color:#86efac" target="_blank"
+       href="https://www.google.com/maps?q=${trip.driver_lat},${trip.driver_lon}">
+       فتح موقع السائق في الخريطة
+    </a>
+  `;
 } else {
   clientMapHint.style.display = "none";
-
-  const mapBox = $("clientDriverMap");
-  if (mapBox) mapBox.style.display = "none";
 }
-
       if (trip.status === "open" || trip.status === "bidding") {
         await loadClientOffers(trip.id);
       } else {
