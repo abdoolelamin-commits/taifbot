@@ -432,13 +432,26 @@ alert("MODE = " + new URLSearchParams(window.location.search).get("mode"));
       mainHero.querySelector("h1").textContent = "🚕 يلا-مشوار";
       heroText.textContent = "اطلب مشوارك وتابع السائق من نفس الشاشة.";
       showOnly(clientSection);
-      if (tg) {
-        tg.MainButton.setText("🚀 إرسال الطلب");
-        tg.MainButton.show();
-        tg.MainButton.enable();
+
+    setTimeout(() => {
+      if (clientFullMap) {
+        clientFullMap.invalidateSize();
       }
-      loadClientHome();
+    }, 400);
+      
+      iif (tg) {
+  tg.MainButton.setText("🚀 إرسال الطلب");
+  tg.MainButton.show();
+  tg.MainButton.enable();
+}
+
+loadClientHome().then(() => {
+  setTimeout(() => {
+    if (clientFullMap) {
+      clientFullMap.invalidateSize();
     }
+  }, 500);
+});
 
     function openDriverMode() {
       currentMode = "driver";
@@ -542,12 +555,20 @@ function showClientDriverMap(driverLat, driverLon) {
   }
 }
     function updateClientMap(trip) {
+  const mapBox = $("clientFullMap");
+  if (!mapBox) return;
+
   const pickupLat = Number(trip.pickup_lat);
   const pickupLon = Number(trip.pickup_lon);
   const destLat = Number(trip.destination_lat);
   const destLon = Number(trip.destination_lon);
 
-  if (!pickupLat || !pickupLon) return;
+  if (!pickupLat || !pickupLon) {
+    mapBox.style.display = "none";
+    return;
+  }
+
+  mapBox.style.display = "block";
 
   if (!clientFullMap) {
     clientFullMap = L.map("clientFullMap").setView([pickupLat, pickupLon], 14);
@@ -556,8 +577,6 @@ function showClientDriverMap(driverLat, driverLon) {
       maxZoom: 19,
       attribution: "© OpenStreetMap"
     }).addTo(clientFullMap);
-
-    setTimeout(() => clientFullMap.invalidateSize(), 300);
   }
 
   if (!clientPickupMarker) {
@@ -586,6 +605,10 @@ function showClientDriverMap(driverLat, driverLon) {
   } else {
     clientFullMap.setView([pickupLat, pickupLon], 14);
   }
+
+  setTimeout(() => {
+    clientFullMap.invalidateSize();
+  }, 400);
 }
     async function loadClientHome() {
       const userId = getUserId();
