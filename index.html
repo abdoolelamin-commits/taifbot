@@ -142,7 +142,15 @@
       color: #fff;
       font-weight: 700;
     }
-
+  #clientFullMap {
+  height: 55vh;
+  min-height: 340px;
+  border-radius: 22px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  direction: ltr;
+  border: 1px solid var(--border);
+}
     .map-help { padding: 0 14px 10px; color: var(--hint); font-size: 13px; line-height: 1.7; }
     #map { flex: 1; min-height: 360px; direction: ltr; }
     .map-actions { padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(255,255,255,0.06); }
@@ -166,6 +174,7 @@
     </div>
 
     <div id="clientSection" class="section">
+      <div id="clientFullMap"></div>
       <div id="clientActiveTripCard" class="card" style="display:none;">
         <h2 style="margin-top:0">🚕 رحلتك الحالية</h2>
         
@@ -275,6 +284,9 @@
     let clientDriverMarker = null;
     let sending = false;
     let driverEditingOffer = false;
+    let clientFullMap = null;
+    let clientPickupMarker = null;
+    let clientDestinationMarker = null;
 
     const $ = (id) => document.getElementById(id);
     const mainHero = $("mainHero");
@@ -529,6 +541,52 @@ function showClientDriverMap(driverLat, driverLon) {
     clientDriverMap.setView([latNum, lonNum], 15);
   }
 }
+    function updateClientMap(trip) {
+  const pickupLat = Number(trip.pickup_lat);
+  const pickupLon = Number(trip.pickup_lon);
+  const destLat = Number(trip.destination_lat);
+  const destLon = Number(trip.destination_lon);
+
+  if (!pickupLat || !pickupLon) return;
+
+  if (!clientFullMap) {
+    clientFullMap = L.map("clientFullMap").setView([pickupLat, pickupLon], 14);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "© OpenStreetMap"
+    }).addTo(clientFullMap);
+
+    setTimeout(() => clientFullMap.invalidateSize(), 300);
+  }
+
+  if (!clientPickupMarker) {
+    clientPickupMarker = L.marker([pickupLat, pickupLon])
+      .addTo(clientFullMap)
+      .bindPopup("📍 موقعك");
+  } else {
+    clientPickupMarker.setLatLng([pickupLat, pickupLon]);
+  }
+
+  if (destLat && destLon) {
+    if (!clientDestinationMarker) {
+      clientDestinationMarker = L.marker([destLat, destLon])
+        .addTo(clientFullMap)
+        .bindPopup("🏁 الوجهة");
+    } else {
+      clientDestinationMarker.setLatLng([destLat, destLon]);
+    }
+
+    const bounds = L.latLngBounds([
+      [pickupLat, pickupLon],
+      [destLat, destLon]
+    ]);
+
+    clientFullMap.fitBounds(bounds, { padding: [40, 40] });
+  } else {
+    clientFullMap.setView([pickupLat, pickupLon], 14);
+  }
+}
     async function loadClientHome() {
       const userId = getUserId();
       const data = await api(`/my_trips/${userId}`);
@@ -540,6 +598,7 @@ function showClientDriverMap(driverLat, driverLon) {
       }
 
       const trip = data.active_trip;
+      updateClientMap(trip);
       clientActiveTripCard.style.display = "block";
       clientRequestCard.style.display = "none";
       clientTripStatus.innerText = trip.status || "-";
