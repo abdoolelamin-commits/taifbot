@@ -609,13 +609,18 @@ function showClientDriverMap(driverLat, driverLon) {
       const userId = getUserId();
       const data = await api(`/my_trips/${userId}`);
 
-      if (!data.active_trip) {
-        clientActiveTripCard.style.display = "none";
-        clientRequestCard.style.display = "block";
-        return;
-      }
+     if (!data.active_trip) {
+  const mapBox = $("clientFullMap");
+  if (mapBox) mapBox.style.display = "none";
+
+  clientActiveTripCard.style.display = "none";
+  clientRequestCard.style.display = "block";
+  return;
+}
 
       const trip = data.active_trip;
+      const mapBox = $("clientFullMap");
+      if (mapBox) mapBox.style.display = "block";
       updateClientMap(trip);
       clientActiveTripCard.style.display = "block";
       clientRequestCard.style.display = "none";
