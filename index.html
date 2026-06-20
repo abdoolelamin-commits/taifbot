@@ -270,6 +270,7 @@
     let destinationLat = null, destinationLon = null;
     let map = null, destinationMarker = null, tempDestinationLat = null, tempDestinationLon = null;
     let sending = false;
+    let driverEditingOffer = false;
 
     const $ = (id) => document.getElementById(id);
     const mainHero = $("mainHero");
@@ -701,8 +702,21 @@ async function renewSubscription() {
         🎯 الوجهة: ${r.destination_text || "-"}<br>
         👥 الركاب: ${r.passengers || "-"}<br>
         ${r.my_price ? `عرضك الحالي: ${r.my_price}` : ""}
-        <input id="offerPrice_${r.id}" placeholder="اكتب السعر" value="${r.my_price || ""}" />
-        <input id="offerEta_${r.id}" placeholder="زمن الوصول بالدقائق" value="${r.my_eta || ""}" />
+       <input
+  id="offerPrice_${r.id}"
+  placeholder="اكتب السعر"
+  value="${r.my_price || ""}"
+  onfocus="driverEditingOffer = true"
+  onblur="driverEditingOffer = false"
+/>
+
+<input
+  id="offerEta_${r.id}"
+  placeholder="زمن الوصول بالدقائق"
+  value="${r.my_eta || ""}"
+  onfocus="driverEditingOffer = true"
+  onblur="driverEditingOffer = false"
+/>
         <button class="btn" onclick="sendDriverOffer(${r.id})">💰 إرسال العرض</button>
       `).join("");
     }
@@ -868,9 +882,8 @@ async function renewSubscription() {
         if (tg) { tg.MainButton.setText("🚀 إرسال الطلب"); tg.MainButton.enable(); }
       }
     }
-    /*
-setInterval(() => {
-  if (currentMode === "driver") {
+  setInterval(() => {
+  if (currentMode === "driver" && !driverEditingOffer) {
     loadDriverHome();
   }
 
@@ -878,7 +891,6 @@ setInterval(() => {
     loadClientHome();
   }
 }, 5000);
-*/
     if (tg) tg.MainButton.onClick(submitTrip);
     initApp();
     setInterval(() => {
