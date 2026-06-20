@@ -868,6 +868,7 @@ async function renewSubscription() {
         if (tg) { tg.MainButton.setText("🚀 إرسال الطلب"); tg.MainButton.enable(); }
       }
     }
+    /*
 setInterval(() => {
   if (currentMode === "driver") {
     loadDriverHome();
@@ -877,6 +878,7 @@ setInterval(() => {
     loadClientHome();
   }
 }, 5000);
+*/
     if (tg) tg.MainButton.onClick(submitTrip);
     initApp();
     setInterval(() => {
