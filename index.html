@@ -7,7 +7,24 @@
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>setInterval(() => {
+  const active = document.activeElement;
+  const isTyping =
+    active &&
+    (
+      active.tagName === "INPUT" ||
+      active.tagName === "TEXTAREA" ||
+      active.tagName === "SELECT"
+    );
+
+  if (currentMode === "driver" && !isTyping) {
+    loadDriverHome();
+  }
+
+  if (currentMode === "client" && !isTyping) {
+    loadClientHome();
+  }
+}, 5000);
 
   <style>
     :root {
@@ -882,15 +899,26 @@ async function renewSubscription() {
         if (tg) { tg.MainButton.setText("🚀 إرسال الطلب"); tg.MainButton.enable(); }
       }
     }
-  setInterval(() => {
-  if (currentMode === "driver" && !driverEditingOffer) {
+
+    setInterval(() => {
+  const active = document.activeElement;
+  const isTyping =
+    active &&
+    (
+      active.tagName === "INPUT" ||
+      active.tagName === "TEXTAREA" ||
+      active.tagName === "SELECT"
+    );
+
+  if (currentMode === "driver" && !isTyping) {
     loadDriverHome();
   }
 
-  if (currentMode === "client") {
+  if (currentMode === "client" && !isTyping) {
     loadClientHome();
   }
 }, 5000);
+  
     if (tg) tg.MainButton.onClick(submitTrip);
     initApp();
     setInterval(() => {
