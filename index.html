@@ -410,22 +410,33 @@ $("switchModeFromClientRequest").onclick = switchAccount;
   return openClientMode();
 }
 
-    function openClientMode() {
+    ffunction openClientMode() {
+
   currentMode = "client";
+
   localStorage.setItem("ym_mode", "client");
 
-  mainHero.querySelector("h1").textContent = "🚕 يلا-مشوار";
-  heroText.textContent = "اطلب مشوارك وتابع السائق من نفس الشاشة.";
+  mainHero.querySelector("h1").textContent =
+      "🚕 يلا-مشوار";
+
+  heroText.textContent =
+      "اطلب مشوارك وتابع السائق من نفس الشاشة.";
 
   showOnly(clientSection);
 
   if (tg) {
+
     tg.MainButton.setText("🚀 إرسال الطلب");
+
     tg.MainButton.show();
+
     tg.MainButton.enable();
+
   }
 
- loadClientHome();
+  loadClientHome();
+
+}
     function openDriverMode() {
       currentMode = "driver";
       localStorage.setItem("ym_mode", "driver");
