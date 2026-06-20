@@ -272,6 +272,8 @@
     let map = null, destinationMarker = null, tempDestinationLat = null, tempDestinationLon = null;
     let sending = false;
     let driverEditingOffer = false;
+    let knownDriverRequestIds = new Set();
+    let driverAlertReady = false;
 
     const $ = (id) => document.getElementById(id);
     const mainHero = $("mainHero");
@@ -721,7 +723,7 @@ async function renewSubscription() {
        🏁 فتح موقع الوجهة
        </a>`
     : "";
-startDriverTracking();
+//startDriverTracking();
   let clientName = "-";
   let clientUsername = null;
 
@@ -776,10 +778,33 @@ startDriverTracking();
     }
     window.driverStartTrip = driverStartTrip;
     window.driverCompleteTrip = driverCompleteTrip;
+function playDriverAlert() {
+  try {
+    navigator.vibrate && navigator.vibrate([200, 100, 200]);
 
+    const audio = new Audio(
+      "https://actions.google.com/sounds/v1/alarms/beep_short.ogg"
+    );
+
+    audio.play().catch(() => {});
+  } catch (e) {
+    console.log(e);
+  }
+}
     async function loadDriverRequests(driverId) {
       const data = await api(`/driver/${driverId}/requests`);
       const requests = data.requests || [];
+      const currentIds = requests.map(r => r.id);
+
+const hasNewRequest = currentIds.some(id => !knownDriverRequestIds.has(id));
+
+if (driverAlertReady && hasNewRequest && requests.length) {
+  playDriverAlert();
+  alert("🔔 وصلك طلب جديد قريب منك");
+}
+
+knownDriverRequestIds = new Set(currentIds);
+driverAlertReady = true;
       if (!requests.length) {
         driverRequestsBox.innerHTML = "لا توجد طلبات قريبة الآن.";
         return;
