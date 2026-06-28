@@ -385,15 +385,11 @@ $("switchModeFromClientRequest").onclick = switchAccount;
   const params = new URLSearchParams(window.location.search);
   const urlMode = params.get("mode");
 
-  if (urlMode === "driver") {
-    localStorage.setItem("ym_mode", "driver");
-  }
+  if (urlMode === "driver" || urlMode === "client") {
+  localStorage.setItem("ym_mode", urlMode);
+}
 
-  if (urlMode === "client") {
-    localStorage.setItem("ym_mode", "client");
-  }
-
-  const savedMode = localStorage.getItem("ym_mode");
+const savedMode = urlMode || localStorage.getItem("ym_mode");
   const both = meData.is_client && meData.is_driver;
 
   showSwitchButtons(both);
