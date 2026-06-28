@@ -678,34 +678,40 @@ function startDriverTracking() {
     }
 async function renewSubscription() {
 
-  const driverId = getUserId();
+    const driverId = getUserId();
 
-  const ok = confirm(
-      "هل تريد تجديد الاشتراك لمدة شهر؟"
-  );
+    if (!driverId) {
+        alert("تعذر معرفة السائق");
+        return;
+    }
 
-  if (!ok) return;
+    if (!confirm("هل تريد تجديد الاشتراك لمدة 30 يوماً؟"))
+        return;
 
-  const res = await api(
-      `/driver/${driverId}/renew_subscription`,
-      {
-        method:"POST"
-      }
-  );
+    const res = await api(
+        `/driver/${driverId}/renew_subscription`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                days: 30
+            })
+        }
+    );
 
-  if(res.ok){
+    if (res.ok) {
 
-      alert(
-        `✅ تم التجديد\n\nينتهي في:\n${new Date(res.subscription_end_at*1000).toLocaleDateString()}`
-      );
+        alert("✅ تم تجديد الاشتراك");
 
-      loadDriverHome();
+        loadDriverHome();
 
-  }else{
+    } else {
 
-      alert("فشل تجديد الاشتراك");
+        alert(res.message || "فشل تجديد الاشتراك");
 
-  }
+    }
 
 }
     async function loadDriverActiveTrip(driverId) {
