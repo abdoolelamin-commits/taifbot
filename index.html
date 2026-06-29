@@ -654,7 +654,7 @@ function startDriverTracking() {
       driverProfileBox.innerHTML += `
 <br><br>
 <button class="btn" onclick="renewSubscription()">
-💳 تجديد الاشتراك
+📩 طلب تجديد الاشتراك
 </button>
 `;
       driverToggleAvailableBtn.innerText = d.available ? "🔴 اجعلني غير متاح" : "🟢 اجعلني متاح";
@@ -680,7 +680,7 @@ async function renewSubscription() {
         return;
     }
 
-    if (!confirm("هل تريد تجديد الاشتراك لمدة 30 يوماً؟"))
+    if (!confirm("هل تريد إرسال طلب تجديد الاشتراك؟"))
         return;
 
     const res = await api(
@@ -698,13 +698,13 @@ async function renewSubscription() {
 
     if (res.ok) {
 
-        alert("✅ تم تجديد الاشتراك");
+        alert(res.message);
 
         loadDriverHome();
 
     } else {
 
-        alert(res.message || "فشل تجديد الاشتراك");
+        alert(res.message || "فشل إرسال الطلب");
 
     }
 
